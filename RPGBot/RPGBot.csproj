@@ -10,4 +10,10 @@
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00600" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,19 +1,31 @@
 ﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RPGBot {
     public class Bot {
 
-        public DiscordClient Client { get; set; }
+        public DiscordClient Client { get; private set; }
+        public CommandsNextExtension Commands { get; private set; }
+        public static ConcurrentDictionary<ulong, string> Prefixes;
+        public Bot() {
+            //TODO: Serialize and Deserialize this!
+            Prefixes = new ConcurrentDictionary<ulong, string>();
+        }
         public async Task RunAsync(string token) {
             Client = new DiscordClient(new DiscordConfiguration {
-                AutoReconnect = true,
                 Token = token,
                 TokenType = TokenType.Bot,
+
+                AutoReconnect = true,
                 ReconnectIndefinitely = true,
+                LogLevel = LogLevel.Info,
+                UseInternalLogHandler = true,
             });
 
             #region EVENTS
@@ -23,8 +35,45 @@ namespace RPGBot {
             Client.GuildUnavailable += OnGuildUnavailable;
             #endregion
 
+            #region Commands
+            Commands = Client.UseCommandsNext(new CommandsNextConfiguration {
+                EnableDms = true,
+                EnableMentionPrefix = true,
+                CaseSensitive = false,
+                IgnoreExtraArguments = false,
+                UseDefaultCommandHandler = false,
+            });
+
+
+            Commands.RegisterCommands<ModeratorCommands>();
+
+            Client.MessageCreated += OnMessageCreated;
+            #endregion
+
             await Client.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private async Task OnMessageCreated(MessageCreateEventArgs e) {
+            if (e.Author.IsBot) { return; }
+            string prefix = GetPrefix(e.Guild);
+            if (e.Message.Content.StartsWith(prefix)) {
+                var cmdText = e.Message.Content.Substring(prefix.Length);
+                var command = Commands.FindCommand(cmdText, out var rawArgs);
+                if (command != null) {
+                    var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
+                    await Commands.ExecuteCommandAsync(ctx);
+                }
+            }
+        }
+
+        public static string GetPrefix(DiscordGuild guild) {
+            if (Prefixes != null) {
+                if (Prefixes.TryGetValue(guild.Id, out string prefix)) {
+                    return prefix;
+                }
+            }
+            return "!!";
         }
 
         #region Event Callbacks
@@ -42,8 +91,8 @@ namespace RPGBot {
             TODO: If we need more, ADD THEM HERE
             */
             var permissions = e.Guild.Permissions.HasValue ? e.Guild.Permissions.Value : 0;
-            if (!permissions.HasPermission(Permissions.AddReactions) 
-                || !permissions.HasPermission(Permissions.ReadMessageHistory) 
+            if (!permissions.HasPermission(Permissions.AddReactions)
+                || !permissions.HasPermission(Permissions.ReadMessageHistory)
                 || !permissions.HasPermission(Permissions.SendMessages)) {
                 //if any of these fail. We need to report it somehow
                 Log(LogLevel.Warning, $"Missing permissions in {e.Guild.Name}.");
@@ -58,7 +107,7 @@ Thanks!
                     .WithColor(DiscordColor.DarkRed);
 
                 try {
-                _ = await e.Guild.Owner.SendMessageAsync(embed: embed);
+                    _ = await e.Guild.Owner.SendMessageAsync(embed: embed);
                 } catch {
                     Log(LogLevel.Critical, $"Tried to contact {e.Guild.Owner.Mention} in {e.Guild.Name}");
                 }
