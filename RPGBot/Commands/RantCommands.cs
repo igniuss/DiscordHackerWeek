@@ -36,23 +36,5 @@ namespace RPGBot.Commands {
                 await ctx.RespondAsync(ex.ToString());
             }
         }
-        [Command("rreload")]
-        public async Task ReloadRant(CommandContext ctx) {
-            //Let's find all the types
-            try {
-                var types = System.Reflection.Assembly.GetAssembly(typeof(RantGenerator))
-                    .GetTypes()
-                    .Where(x => x.IsClass && !x.IsAbstract && x.IsSubclassOf(typeof(RantGenerator)));
-                foreach (var type in types) {
-                    var instance = (RantGenerator)type.GetField("Instance").GetValue(null);
-                    instance.Reload();
-                }
-            } catch (System.Exception ex) {
-                Console.WriteLine($"[ERROR] {ex}");
-                await ctx.RespondAsync($"```csharp\n[ERROR]\n{ex}```");
-                return;
-            }
-            await ctx.RespondAsync($"👌👌");
-        }
     }
 }
