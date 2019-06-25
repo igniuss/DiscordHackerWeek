@@ -1,0 +1,4 @@
+﻿{
+    {<name-male>|<name-female>}\s
+    {<name-male>|<name-female>}|(.1)[quot:[case:title]<noun>-<verb.er-transitive-violent>[case:none]]\s
+}
