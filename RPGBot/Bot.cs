@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using RPGBot.Commands;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -46,6 +47,7 @@ namespace RPGBot {
 
 
             Commands.RegisterCommands<ModeratorCommands>();
+            Commands.RegisterCommands<RantCommands>();
 
             Client.MessageCreated += OnMessageCreated;
             #endregion
@@ -56,7 +58,7 @@ namespace RPGBot {
 
         private async Task OnMessageCreated(MessageCreateEventArgs e) {
             if (e.Author.IsBot) { return; }
-            string prefix = GetPrefix(e.Guild);
+            var prefix = GetPrefix(e.Guild);
             if (e.Message.Content.StartsWith(prefix)) {
                 var cmdText = e.Message.Content.Substring(prefix.Length);
                 var command = Commands.FindCommand(cmdText, out var rawArgs);
@@ -69,7 +71,7 @@ namespace RPGBot {
 
         public static string GetPrefix(DiscordGuild guild) {
             if (Prefixes != null) {
-                if (Prefixes.TryGetValue(guild.Id, out string prefix)) {
+                if (Prefixes.TryGetValue(guild.Id, out var prefix)) {
                     return prefix;
                 }
             }
