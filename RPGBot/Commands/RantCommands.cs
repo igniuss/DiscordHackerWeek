@@ -69,16 +69,16 @@ namespace RPGBot.Commands {
             }
 
             await Task.Delay((int)TimeSpan.FromSeconds(10).TotalMilliseconds);
-            var VotedUsers = new List<ulong>();
+            var votedUsers = new List<ulong>();
             var reactions = new Dictionary<DiscordEmoji, List<DiscordUser>>();
 
             foreach (var emoji in emojis) {
                 var users = await msg.GetReactionsAsync(emoji);
                 reactions.Add(emoji, new List<DiscordUser>());
                 foreach (var user in users) {
-                    if (user.IsBot || VotedUsers.Contains(user.Id)) { continue; }
+                    if (user.IsBot || votedUsers.Contains(user.Id)) { continue; }
                     reactions[emoji].Add(user);
-                    VotedUsers.Add(user.Id);
+                    votedUsers.Add(user.Id);
                 }
             }
 
