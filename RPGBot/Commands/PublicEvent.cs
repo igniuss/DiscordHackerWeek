@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using RPGBot.Characters;
 using RPGBot.Generative;
+using RPGBot.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -112,10 +113,16 @@ Pick your Fighter!
                     if (!CurrentPlayers.ContainsKey(character)) {
                         CurrentPlayers.TryAdd(character, new List<Player>());
                     }
+                    try {
+                        var player = Player.GetPlayer(Channel.GuildId, user.Id);
+                        player.character = character;
+                        player.discordUser = user;
 
-                    var player = new Player(user, character);
-                    CurrentPlayers[character].Add(player);
-                    votedUsers.Add(user.Id);
+                        CurrentPlayers[character].Add(player);
+                        votedUsers.Add(user.Id);
+                    } catch (System.Exception ex) {
+                        Console.WriteLine(ex);
+                    }
                 }
             }
 
@@ -252,13 +259,13 @@ DEF : {damageBlocked}
                     }
                     foreach (var fledPlayer in fledPlayers) {
                         actionQueue.TryRemove(fledPlayer, out _);
-                        CurrentPlayers[fledPlayer.Character].Remove(fledPlayer);
+                        CurrentPlayers[fledPlayer.character].Remove(fledPlayer);
                         CurrentHP -= fledPlayer.GetHP();
                         MaxHP -= fledPlayer.GetHP();
                     }
 
                     foreach (var kv in actionQueue) {
-                        var charType = kv.Key.Character;
+                        var charType = kv.Key.character;
                         if (kv.Value.GetType() == typeof(Actions.Attack)) {
                             damageDealt += kv.Key.GetAttack();
                         } else if (kv.Value.GetType() == typeof(Actions.Defend)) {
@@ -295,6 +302,11 @@ DEF : {damageBlocked}
             await Channel.SendMessageAsync($"You've defeated a mighty opponent!\nEveryone who joined the fight received {goldReceived} gold");
             foreach (var player in CurrentPlayers.Values.SelectMany(x => x)) {
                 player.Gold += goldReceived;
+                try {
+                    player.Update();
+                } catch (System.Exception ex) {
+                    await Channel.SendMessageAsync(ex.ToString());
+                }
             }
         }
     }
