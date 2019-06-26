@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RPGBot.Characters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,11 @@ namespace RPGBot.Models {
         public ulong GuildId { get; set; }
         public ulong[] Experience { get; set; }
         public ulong Gold { get; set; }
+        public CharacterBase CurrentCharacter;
+        public int EnemiesKilled { get; set; }
+        public int TotalQuests { get; set; }
+        public int SuccessfulQuests { get; set; }
+        public int MercenariesHired { get; set; }
 
         
         public DiscordUser discordUser;
