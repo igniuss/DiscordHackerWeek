@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq.Expressions;
+using System.Linq;
 
 namespace RPGBot {
     public class DB {
@@ -19,6 +20,14 @@ namespace RPGBot {
             using (var db = new LiteDatabase(dbName)) {
                 var table = db.GetCollection<T>(tableName);
                 var result = table.Find(predicate, skip, limit);
+                return result;
+            }
+        }
+
+        public static T FindOne<T>(string dbName, string tableName, Expression<Func<T, bool>> predicate, int skip = 0) {
+            using (var db = new LiteDatabase(dbName)) {
+                var table = db.GetCollection<T>(tableName);
+                var result = table.Find(predicate, skip, 1).FirstOrDefault();
                 return result;
             }
         }
