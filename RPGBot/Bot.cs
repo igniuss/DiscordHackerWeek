@@ -51,6 +51,7 @@ namespace RPGBot {
 
             Commands.RegisterCommands<ModeratorCommands>();
             Commands.RegisterCommands<RantCommands>();
+            Commands.RegisterCommands<InfoCommands>();
 
             Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
                 PaginationBehaviour = DSharpPlus.Interactivity.Enums.PaginationBehaviour.Default,

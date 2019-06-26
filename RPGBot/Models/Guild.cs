@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RPGBot.Models {
     public class Guild {
-        ulong Id { get; }
+        ulong Id { get; set; }
         Player[] Players { get; set; }
 
         public Guild(ulong id, Player[] players) {
