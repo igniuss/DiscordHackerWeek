@@ -1,10 +1,10 @@
 ﻿using Rant;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+
 namespace RPGBot.Generative {
+
     public abstract class RantGenerator {
         public abstract string RantPath { get; }
         private readonly RantEngine Engine = new RantEngine();

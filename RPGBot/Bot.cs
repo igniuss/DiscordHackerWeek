@@ -6,24 +6,31 @@ using DSharpPlus.Interactivity;
 using RPGBot.Commands;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RPGBot {
-    public class Bot {
 
-        public DiscordClient Client { get; private set; }
-        public CommandsNextExtension Commands { get; private set; }
-        public InteractivityExtension Interactivty { get; private set; }
+    public class Bot {
+        public static DiscordChannel ImageCache { get; private set; }
+        public static DiscordClient Client { get; private set; }
+        public static CommandsNextExtension Commands { get; private set; }
+        public static InteractivityExtension Interactivty { get; private set; }
+
+        public static ConcurrentDictionary<ulong, DiscordChannel> ConfiguredChannels { get; set; }
 
         public static ConcurrentDictionary<ulong, string> Prefixes;
+
+        private Options Options { get; set; }
+
         public Bot() {
             //TODO: Serialize and Deserialize this!
             Prefixes = new ConcurrentDictionary<ulong, string>();
+            ConfiguredChannels = new ConcurrentDictionary<ulong, DiscordChannel>();
         }
-        public async Task RunAsync(string token) {
+
+        public async Task RunAsync(Options options) {
             Client = new DiscordClient(new DiscordConfiguration {
-                Token = token,
+                Token = options.Token,
                 TokenType = TokenType.Bot,
 
                 AutoReconnect = true,
@@ -31,15 +38,19 @@ namespace RPGBot {
                 LogLevel = LogLevel.Info,
                 UseInternalLogHandler = true,
             });
+            Options = options;
 
             #region EVENTS
+
             Client.Ready += OnClientReady;
             Client.ClientErrored += OnClientErrored;
             Client.GuildAvailable += OnGuildAvailable;
             Client.GuildUnavailable += OnGuildUnavailable;
-            #endregion
+
+            #endregion EVENTS
 
             #region Commands
+
             Commands = Client.UseCommandsNext(new CommandsNextConfiguration {
                 EnableDms = true,
                 EnableMentionPrefix = true,
@@ -48,17 +59,18 @@ namespace RPGBot {
                 UseDefaultCommandHandler = false,
             });
 
-
             Commands.RegisterCommands<ModeratorCommands>();
             Commands.RegisterCommands<RantCommands>();
+            Commands.RegisterCommands<RPGCommands>();
 
             Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
                 PaginationBehaviour = DSharpPlus.Interactivity.Enums.PaginationBehaviour.Default,
                 PollBehaviour = DSharpPlus.Interactivity.Enums.PollBehaviour.Default,
                 PaginationDeletion = DSharpPlus.Interactivity.Enums.PaginationDeletion.Default,
-            }); 
+            });
             Client.MessageCreated += OnMessageCreated;
-            #endregion
+
+            #endregion Commands
 
             await Client.ConnectAsync();
             await Task.Delay(-1);
@@ -71,8 +83,12 @@ namespace RPGBot {
                 var cmdText = e.Message.Content.Substring(prefix.Length);
                 var command = Commands.FindCommand(cmdText, out var rawArgs);
                 if (command != null) {
-                    var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
-                    await Commands.ExecuteCommandAsync(ctx);
+                    try {
+                        var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
+                        await Commands.ExecuteCommandAsync(ctx);
+                    } catch (System.Exception ex) {
+                        await e.Channel.SendMessageAsync(ex.ToString());
+                    }
                 }
             }
         }
@@ -110,7 +126,7 @@ namespace RPGBot {
                 var embed = new DiscordEmbedBuilder()
                     .WithTitle("Error")
                     .WithDescription($@"Hi there {e.Guild.Owner.Nickname}! 👋, seems like I'm missing some permissions to work properly!
-To operate properly, I need to be able to Send Messages, Add Reactions, and Read Message History, be sure to invite me again with these settings. 
+To operate properly, I need to be able to Send Messages, Add Reactions, and Read Message History, be sure to invite me again with these settings.
 Thanks!
 ")
                     .WithAuthor("RPG-Bot")
@@ -125,7 +141,6 @@ Thanks!
             } else {
                 //TODO: Send instructions to the owner.
             }
-
         }
 
         private async Task OnClientErrored(ClientErrorEventArgs e) {
@@ -139,15 +154,24 @@ Thanks!
         }
 
         private async Task OnGuildAvailable(GuildCreateEventArgs e) {
+            if (e.Guild.Id == Options.Guild) {
+                Log(LogLevel.Info, $"Setting up ImageCache");
+                var channels = await e.Guild.GetChannelsAsync();
+                foreach (var channel in channels) {
+                    if (channel.Id == Options.CacheChannel) {
+                        ImageCache = channel;
+                        break;
+                    }
+                }
+            }
             Log(LogLevel.Info, $"{e.Guild.Name} is now Available");
             await Task.Delay(1);
         }
 
-        #endregion
+        #endregion Event Callbacks
 
         private void Log(LogLevel level, string msg) {
             Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);
         }
     }
 }
-

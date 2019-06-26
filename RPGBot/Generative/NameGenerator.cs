@@ -1,12 +1,12 @@
 ﻿namespace RPGBot.Generative {
-    public class NameGenerator : RantGenerator {
-        public static NameGenerator Instance { get; } = new NameGenerator();
+
+    public class NamesGenerator : RantGenerator {
+        public static NamesGenerator Instance { get; } = new NamesGenerator();
 
         public override string RantPath {
             get {
                 return "Generative/names.rant";
             }
         }
-
     }
 }

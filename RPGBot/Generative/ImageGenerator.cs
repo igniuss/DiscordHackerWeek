@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using RPGBot.Helpers;
+﻿using RPGBot.Helpers;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.Primitives;
+using System;
+using System.IO;
 
 namespace RPGBot.Generative {
+
     public class ImageGenerator {
         private const string CharacterPath = "Assets/Characters/";
         private const string BackgroundPath = "Assets/Backgrounds/";

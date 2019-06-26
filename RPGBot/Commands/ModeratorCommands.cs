@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using System.Threading.Tasks;
 
 namespace RPGBot.Commands {
+
     public class ModeratorCommands : BaseCommandModule {
+
         [Command("prefix")]
         [Description("Set the prefix")]
         public async Task SetPrefix(CommandContext ctx, string prefix) {
@@ -28,6 +30,5 @@ namespace RPGBot.Commands {
             var emoji = DiscordEmoji.FromName(ctx.Client, ":ping_pong:");
             await ctx.RespondAsync($"{emoji} Pong! Ping: {ctx.Client.Ping}ms");
         }
-
     }
 }

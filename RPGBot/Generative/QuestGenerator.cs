@@ -1,5 +1,6 @@
 ﻿namespace RPGBot.Generative {
-    class QuestGenerator : RantGenerator {
+
+    internal class QuestGenerator : RantGenerator {
         public static QuestGenerator Instance { get; } = new QuestGenerator();
 
         public override string RantPath {

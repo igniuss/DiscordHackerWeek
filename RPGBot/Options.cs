@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace RPGBot {
 
-namespace RPGBot {
     public class Options {
         public string Token { get; set; }
+        public ulong Guild { get; set; }
+        public ulong CacheChannel { get; set; }
     }
 }
