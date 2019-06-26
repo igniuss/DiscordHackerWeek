@@ -1,0 +1,2 @@
+﻿[case:sentence]
+{<verb-violent>\s|<verb-eat>\s}the <adv> <adj-appearance> {<adj>\s|<adj-emotion>\s|}{<noun-animal-mythical.pl>|<noun-animal-mythical>}.

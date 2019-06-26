@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
 using RPGBot.Commands;
 using System;
 using System.Collections.Concurrent;
@@ -13,6 +14,8 @@ namespace RPGBot {
 
         public DiscordClient Client { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
+        public InteractivityExtension Interactivty { get; private set; }
+
         public static ConcurrentDictionary<ulong, string> Prefixes;
         public Bot() {
             //TODO: Serialize and Deserialize this!
@@ -49,6 +52,11 @@ namespace RPGBot {
             Commands.RegisterCommands<ModeratorCommands>();
             Commands.RegisterCommands<RantCommands>();
 
+            Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
+                PaginationBehaviour = DSharpPlus.Interactivity.Enums.PaginationBehaviour.Default,
+                PollBehaviour = DSharpPlus.Interactivity.Enums.PollBehaviour.Default,
+                PaginationDeletion = DSharpPlus.Interactivity.Enums.PaginationDeletion.Default,
+            }); 
             Client.MessageCreated += OnMessageCreated;
             #endregion
 
