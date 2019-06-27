@@ -16,6 +16,7 @@ namespace RPGBot {
     public class Bot {
         public static DiscordChannel ImageCache { get; private set; }
         public static DiscordClient Client { get; private set; }
+        public Options Options { get; private set; }
         public static CommandsNextExtension Commands { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
 
