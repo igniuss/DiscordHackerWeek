@@ -36,18 +36,17 @@ namespace RPGBot.Commands {
             if (channel.Type == DSharpPlus.ChannelType.Text) {
                 var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
                 if (guild == null) {
-                    guild = new GuildOptions { Id = ctx.Guild.Id };
+                    guild = new GuildOption { Id = ctx.Guild.Id };
                 }
                 guild.Channel = channel.Id;
                 try {
-                    DB.Upsert(GuildOptions.DBName, GuildOptions.TableName, guild);
-                    await ctx.RespondAsync($"👌👌 New default channel is now {guild.GetChannel()}");
+                    DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
+                    Bot.GuildOptions = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
+                    await ctx.RespondAsync($"👌 New default channel is now {guild.GetChannel()}");
                 } catch (System.Exception ex) {
                     Console.WriteLine(ex);
                 }
             }
-            await ctx.RespondAsync("Error");
-
         }
         [Command("event")]
         public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {

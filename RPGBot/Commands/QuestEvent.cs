@@ -183,7 +183,7 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                 var random = new Random();
                 var original = ImageGenerator.CreateImage(enemy, backdrop);
                 var url = await RPGCommands.GetURL(original);
-                var actions = Actions.ActionBase.GetActions();
+                var actions = Actions.ActionBase.GetAllActions();
 
                 var totalExp = CurrentPlayers.Values.SelectMany(x => x).Sum(x => (long)x.GetCurrentExp());
                 var totalLevel = Player.CalculateLevel((ulong)totalExp);
@@ -274,6 +274,8 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     var fledPlayers = new List<Player>();
                     foreach (var kv in actionQueue) {
                         if (kv.Value.GetType() == typeof(Actions.Flee)) { //Player runs the fuck away
+                            //Get a little xp for running, if you did damage
+
                             fledPlayers.Add(kv.Key);
                         }
                     }
@@ -282,6 +284,10 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                         CurrentPlayers[fledPlayer.character].Remove(fledPlayer);
                         CurrentHP -= fledPlayer.GetHP();
                         MaxHP -= fledPlayer.GetHP();
+
+                        var exp = (ulong)Math.Ceiling(enemyLevel * 10f * (currentEnemyHP / maxEnemyHP));
+                        fledPlayer.IncreaseExperience(exp);
+                        fledPlayer.Update();
                     }
 
                     foreach (var kv in actionQueue) {

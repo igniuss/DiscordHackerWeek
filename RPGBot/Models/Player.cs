@@ -67,18 +67,20 @@ namespace RPGBot.Models {
 
         public float GetAttack() {
             if (this.character == null) { return 0f; }
+            var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
-
-            return lvl * _base * this.character.AttackPowerMultiplier;
+            var crit = random.Next(1, 6) * 0.75f;
+            return lvl * _base * this.character.AttackPowerMultiplier * crit;
         }
 
         public float GetDefense() {
             if (this.character == null) { return 0f; }
+            var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
-
-            return lvl * _base * this.character.HealthMultiplier;
+            var crit = random.Next(1, 6) * 0.75f;
+            return lvl * _base * this.character.HealthMultiplier * crit;
         }
 
         public void IncreaseGold(float gold) {

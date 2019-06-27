@@ -16,7 +16,7 @@ namespace RPGBot.Actions {
             }
             return this.emoji;
         }
-        public static IEnumerable<ActionBase> GetActions() {
+        public static IEnumerable<ActionBase> GetAllActions() {
             var actions = typeof(Actions.ActionBase).Assembly.GetTypes()
                 .Where(t => t.IsSubclassOf(typeof(Actions.ActionBase)) && !t.IsAbstract)
                 .Select(t => (Actions.ActionBase)Activator.CreateInstance(t));

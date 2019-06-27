@@ -20,7 +20,7 @@ namespace RPGBot {
         public static CommandsNextExtension Commands { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
         
-        public static List<GuildOptions> GuildOptions;
+        public static List<GuildOption> GuildOptions;
         public Bot() {
             GuildOptions = LoadGuildOptions();
         }
@@ -54,12 +54,14 @@ namespace RPGBot {
                 CaseSensitive = false,
                 IgnoreExtraArguments = false,
                 UseDefaultCommandHandler = false,
+                EnableDefaultHelp=false,
             });
 
             Commands.RegisterCommands<ModeratorCommands>();
             Commands.RegisterCommands<RantCommands>();
             Commands.RegisterCommands<RPGCommands>();
             Commands.RegisterCommands<InfoCommands>();
+            Commands.RegisterCommands<HelpCommands>();
 
             Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
                 PaginationBehaviour = DSharpPlus.Interactivity.Enums.PaginationBehaviour.Default,
@@ -101,13 +103,13 @@ namespace RPGBot {
             return "!!";
         }
 
-        private List<GuildOptions> LoadGuildOptions() {
-            var prefixes = DB.GetAll<GuildOptions>("prefixes.db", "prefixes").ToList();
-            if(prefixes == null) {
-                prefixes = new List<GuildOptions>();
-                DB.Insert("prefixes.db", "prefixes", prefixes);
+        private List<GuildOption> LoadGuildOptions() {
+            var options = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
+            if(options == null) {
+                options = new List<GuildOption>();
+                DB.Insert(GuildOption.DBName, GuildOption.TableName, options);
             }
-            return prefixes;
+            return options;
         }
 
         #region Event Callbacks
