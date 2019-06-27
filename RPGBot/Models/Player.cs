@@ -15,6 +15,7 @@ namespace RPGBot.Models {
         public int TotalQuests { get; set; }
         public int SuccessfulQuests { get; set; }
         public int MercenariesHired { get; set; }
+        public int DeathCounter { get; set; }
 
         public CharacterBase character;
         public DiscordUser discordUser;
@@ -88,7 +89,7 @@ namespace RPGBot.Models {
             Gold += (ulong)Math.Ceiling(gold * this.character.GoldMultiplier);
         }
 
-        public void IncreaseExperience(ulong exp) {
+        public void IncreaseExperience(long exp) {
             if (this.character == null) { return; }
             if (Experience == null) { Experience = new ulong[0]; }
             if (Experience.Length <= this.character.Id) {
@@ -99,7 +100,7 @@ namespace RPGBot.Models {
                 }
                 Experience = newExp;
             }
-            Experience[this.character.Id] += exp;
+            Experience[this.character.Id] = (ulong)Math.Max(0, (long)Experience[this.character.Id] + exp);
         }
     }
 }
