@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace RPGBot.Models {
-    public class GuildOptions {
+    public class GuildOption {
         public const string DBName = "guildoptions.db";
         public const string TableName = "options";
 

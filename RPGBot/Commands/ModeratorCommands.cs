@@ -19,11 +19,11 @@ namespace RPGBot.Commands {
 
             if (!string.IsNullOrEmpty(prefix)) {
                 var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
-                if (guild == null) { guild = new GuildOptions { Id = ctx.Guild.Id }; }
+                if (guild == null) { guild = new GuildOption { Id = ctx.Guild.Id }; }
 
                 guild.Prefix = prefix;
                 Bot.GuildOptions.Add(guild);
-                DB.Upsert(GuildOptions.DBName, GuildOptions.TableName, guild);
+                DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
             }
             await ctx.RespondAsync($"New prefix is now `{Bot.GetPrefix(ctx.Guild)}` 👌");
         }
