@@ -10,20 +10,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace RPGBot.Commands {
+
     public class RantCommands : BaseCommandModule {
         public DiscordChannel ImageCache;
+
         [Command("rquest")]
         public async Task GetRandomQuest(CommandContext ctx, int count = 10) {
             try {
-
                 await ctx.RespondAsync($"```{string.Join("\n", QuestGenerator.Instance.GetResults((uint)count))}```");
             } catch (System.Exception ex) {
                 await ctx.RespondAsync(ex.ToString());
             }
         }
+
         [Command("rname")]
         public async Task GetRandomName(CommandContext ctx, int count = 10) {
-            await ctx.RespondAsync($"```{string.Join("\n", NameGenerator.Instance.GetResults((uint)count))}```");
+            await ctx.RespondAsync($"```{string.Join("\n", NamesGenerator.Instance.GetResults((uint)count))}```");
         }
 
         private async Task CheckImageCache(CommandContext ctx) {
@@ -46,16 +48,13 @@ namespace RPGBot.Commands {
 
             var imgUpload = await this.ImageCache.SendFileAsync(imgPath);
             var url = imgUpload.Attachments.First().Url;
-
-            File.Delete(imgPath);
-
+            
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Adventure Awaits!")
                 .WithImageUrl(url)
                 .WithDescription($"Current Quest: {quest}")
                 .WithFooter("RPG-Bot - (☞ﾟヮﾟ)☞ Iggy&Jeff Co. ☜(ﾟヮﾟ☜)")
                 .WithColor(DiscordColor.CornflowerBlue);
-
 
             var msg = await ctx.RespondAsync(embed: embed);
             var emojis = new DiscordEmoji[] {
@@ -105,6 +104,7 @@ namespace RPGBot.Commands {
             msg = await ctx.RespondAsync(embed: embed);
             await msg.DeleteAllReactionsAsync("rpgbot-stage-reset");
         }
+
         [Command("genquest")]
         public async Task GenerateQuest(CommandContext ctx) {
             await CheckImageCache(ctx);
@@ -118,7 +118,6 @@ namespace RPGBot.Commands {
             var imgUpload = await this.ImageCache.SendFileAsync(imgPath);
             var url = imgUpload.Attachments.First().Url;
 
-
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Adventure Awaits!")
                 .WithImageUrl(url)
@@ -126,7 +125,6 @@ namespace RPGBot.Commands {
                 .WithFooter("RPG-Bot - Iggy&Jeff inc ☜(ﾟヮﾟ☜)")
                 .WithColor(DiscordColor.CornflowerBlue);
             await ctx.RespondAsync(embed: embed);
-
         }
 
         [Command("dorant")]

@@ -6,7 +6,9 @@ using DSharpPlus.Entities;
 using RPGBot.Models;
 
 namespace RPGBot.Commands {
+
     public class ModeratorCommands : BaseCommandModule {
+
         [Command("prefix")]
         [Description("Set the prefix")]
         public async Task SetPrefix(CommandContext ctx, string prefix) {
