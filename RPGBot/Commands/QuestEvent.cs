@@ -126,7 +126,10 @@ Pick your Fighter!
                     }
                 }
             }
-
+            if(CurrentPlayers.Count == 0) {
+                await msg.DeleteAsync();
+                return;
+            }
             #region SET HP
 
             CurrentHP = 0f;
@@ -331,13 +334,16 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     player.IncreaseGold(goldReceived);
                     player.IncreaseExperience(expeReceived);
                     healed += Math.Min(MaxHP, CurrentHP + (player.GetHP() * 0.25f));
+                    CurrentHP = healed;
                     try {
                         player.Update();
                     } catch (System.Exception ex) {
                         await Channel.SendMessageAsync(ex.ToString());
                     }
                 }
-                await Channel.SendMessageAsync($"You've defeated a mighty opponent in {turnCount} turns!\nEveryone who joined the fight received a base of {goldReceived} gold\nHealed up by {healed}HP.");
+                await Channel.SendMessageAsync($@"You've defeated a mighty opponent in {turnCount} turns!
+Everyone who joined the fight received a base of {goldReceived} gold
+Your party has rested and healed back up to {healed}HP.");
 
             } catch (System.Exception ex) {
                 await Channel.SendMessageAsync(ex.ToString());

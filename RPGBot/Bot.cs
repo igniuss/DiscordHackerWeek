@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace RPGBot {
 
@@ -19,7 +20,8 @@ namespace RPGBot {
         public Options Options { get; private set; }
         public static CommandsNextExtension Commands { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
-        
+        public Timer PeriodicEvent { get; private set; }
+
         public static List<GuildOption> GuildOptions;
         public Bot() {
             GuildOptions = LoadGuildOptions();
@@ -43,6 +45,7 @@ namespace RPGBot {
             Client.ClientErrored += OnClientErrored;
             Client.GuildAvailable += OnGuildAvailable;
             Client.GuildUnavailable += OnGuildUnavailable;
+            Client.Heartbeated += OnHeartbeat;
 
             #endregion EVENTS
 
@@ -73,7 +76,36 @@ namespace RPGBot {
             #endregion Commands
 
             await Client.ConnectAsync();
+
+            PeriodicEvent = new Timer(TimeSpan.FromHours(1).TotalMilliseconds);
+            PeriodicEvent.Elapsed += OnUpdate;
+            PeriodicEvent.Start();
+            LastEvent = DateTime.Now;
             await Task.Delay(-1);
+        }
+
+        private async Task OnHeartbeat(HeartbeatEventArgs e) {
+            //calculate time left till new mission
+            var span = TimeSpan.FromMilliseconds(PeriodicEvent.Interval);
+            var timeLeft = LastEvent + span - DateTime.Now;
+
+            //get all the other data in here boys
+            var serverCount = Bot.Client.Guilds.Count;
+            var memberCount = Bot.Client.Guilds.Sum(x => x.Value.MemberCount);
+            var activity = new DiscordActivity($"{timeLeft} until event.\nIn {serverCount} servers with {memberCount} members.", ActivityType.Streaming);
+            await Bot.Client.UpdateStatusAsync(activity, UserStatus.Online);
+        }
+
+        private DateTime LastEvent { get; set; }
+        private async void OnUpdate(object sender, ElapsedEventArgs e) {
+            Log(LogLevel.Info, "Starting Event");
+            foreach(var option in GuildOptions) {
+                var quest = new QuestEvent(option.GetChannel());
+
+                //We don't wanna call this async. Start them all at once
+                quest.StartQuest();
+            }
+            LastEvent = DateTime.Now;
         }
 
         private async Task OnMessageCreated(MessageCreateEventArgs e) {
@@ -91,6 +123,7 @@ namespace RPGBot {
                     }
                 }
             }
+
         }
 
         public static string GetPrefix(DiscordGuild guild) {
