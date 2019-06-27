@@ -92,9 +92,14 @@ namespace RPGBot.Commands {
             player.LifetimeMercenariesHired += quantity;
             player.CurrentMercenaries += quantity;
             for (var i = 0; i < quantity; i++) {
-                player.Items.Add(item);
+                if (!player.Items.Any(x => x.GetType() == item.GetType())) {
+                    player.Items.Add(item);
+                }
+                var found = player.Items.First(x => x.GetType() == item.GetType());
+                found.Count++;
             }
             player.Update();
+            await ctx.RespondAsync($"{ctx.Member.Mention}, you bought {quantity} {item.Name} for {price} gold.\nYou have {player.Gold} gold remaining.");
         }
 
         [Command("inventory")]
@@ -103,7 +108,7 @@ namespace RPGBot.Commands {
             var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
             var output = "";
             var itemTypes = Items.ItemBase.GetAllItems();
-            foreach(var t in itemTypes) {
+            foreach (var t in itemTypes) {
                 var quantity = player.Items.Where(item => item.GetType() == t.GetType()).Count();
                 output += $"{t.GetEmoji()} {t.Name}: {quantity}\n";
             }
@@ -112,7 +117,7 @@ namespace RPGBot.Commands {
                 .WithAuthor(ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
                 .WithDescription(output)
                 .WithColor(DiscordColor.Blue);
-               
+
             await ctx.RespondAsync(embed: embed);
         }
     }

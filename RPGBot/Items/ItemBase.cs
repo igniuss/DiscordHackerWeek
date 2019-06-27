@@ -6,18 +6,14 @@ using System.Text;
 
 namespace RPGBot.Items {
     public abstract class ItemBase {
+        public ItemBase() { }
+        public abstract int Id { get; }
         public abstract string Name { get; }
         public abstract ulong Price { get; }
-        public abstract ulong EmojiId { get; }
         public abstract string ItemDescription { get; }
-        private DiscordEmoji emoji;
+        public abstract int Count { get; set; }
 
-        public DiscordEmoji GetEmoji() {
-            if (this.emoji == null) {
-                this.emoji = DiscordEmoji.FromGuildEmote(Bot.Client, EmojiId);
-            }
-            return this.emoji;
-        }
+        public DiscordEmoji emoji { get; set; }
 
         public static IEnumerable<ItemBase> GetAllItems() {
             var items = typeof(ItemBase).Assembly.GetTypes()
@@ -25,6 +21,8 @@ namespace RPGBot.Items {
                 .Select(t => (ItemBase)Activator.CreateInstance(t));
             return items;
         }
+
+        public abstract DiscordEmoji GetEmoji();
 
         public override string ToString() {
             return $"{GetEmoji()} {Name}: {Price} :moneybag:\n" +

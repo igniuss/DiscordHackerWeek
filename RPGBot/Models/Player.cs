@@ -42,7 +42,7 @@ namespace RPGBot.Models {
             }
 
             if(player.Items == null) {
-                player.Items = new List<ItemBase>();
+                player.Items = ItemBase.GetAllItems().ToList();
             }
 
             return player;
@@ -71,7 +71,7 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 100;
 
-            return lvl * _base * this.character.HealthMultiplier;
+            return lvl * _base * this.character.HealthMultiplier * (CurrentMercenaries * 0.5f);
         }
 
         public float GetAttack() {
@@ -80,7 +80,8 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = random.Next(1, 6) * 0.75f;
-            return lvl * _base * this.character.AttackPowerMultiplier * crit;
+            
+            return lvl * _base * this.character.AttackPowerMultiplier * crit * (CurrentMercenaries * 0.5f);
         }
 
         public float GetDefense() {
@@ -89,7 +90,7 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = random.Next(1, 6) * 0.75f;
-            return lvl * _base * this.character.HealthMultiplier * crit;
+            return lvl * _base * this.character.HealthMultiplier * crit * (CurrentMercenaries * 0.5f);
         }
 
         public void IncreaseGold(float gold) {

@@ -1,4 +1,6 @@
-﻿namespace RPGBot.Characters {
+﻿using DSharpPlus.Entities;
+
+namespace RPGBot.Characters {
 
     // Knight has average attack and gold earned, but gets a health bonus from its armor
     public class Knight : CharacterBase {
@@ -15,7 +17,10 @@
             get { return 1; }
         }
 
-        public override string Emoji {
+        public override DiscordEmoji GetEmoji() {
+            return DiscordEmoji.FromName(Bot.Client, Emoji);
+        }
+        public string Emoji {
             get {
                 return ":shield:";
             }

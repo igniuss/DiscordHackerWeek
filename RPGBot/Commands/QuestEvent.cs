@@ -350,6 +350,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                             player.DeathCounter++;
                             var deathExp = -(long)Math.Ceiling(enemyLevel * random.Next(1, 5) * 5f);
                             player.IncreaseExperience(deathExp);
+                            player.CurrentMercenaries = 0;
                             player.Update();
                         }
                         await Channel.SendMessageAsync($"The Creature has defeated everyone in {turnCount} turns!");
@@ -371,13 +372,13 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     player.EnemiesKilled++;
                     player.IncreaseGold(goldReceived);
                     player.IncreaseExperience(expeReceived);
+                    var newMercCount = Math.Max(0, random.Next(1, player.CurrentMercenaries));
+                    player.CurrentMercenaries = newMercCount;
+
+                    player.Update();
+
                     if (heal) {
                         healed += Math.Min(MaxHP, CurrentHP + (player.GetHP() * 0.15f));
-                    }
-                    try {
-                        player.Update();
-                    } catch (System.Exception ex) {
-                        await Channel.SendMessageAsync(ex.ToString());
                     }
                 }
 

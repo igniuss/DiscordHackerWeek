@@ -12,15 +12,7 @@ namespace RPGBot.Characters {
         public abstract float AttackPowerMultiplier { get; }
         public abstract float HealthMultiplier { get; }
         public abstract float GoldMultiplier { get; }
-        public abstract string Emoji { get; }
-        private DiscordEmoji _Emoji;
-
-        public DiscordEmoji GetEmoji() {
-            if (this._Emoji == null) {
-                this._Emoji = DiscordEmoji.FromName(Bot.Client, Emoji);
-            }
-            return this._Emoji;
-        }
+        public abstract DiscordEmoji GetEmoji();
 
         public static IEnumerable<CharacterBase> GetAllCharacters() {
             var actions = typeof(CharacterBase).Assembly.GetTypes()
