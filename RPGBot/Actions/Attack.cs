@@ -1,4 +1,6 @@
-﻿namespace RPGBot.Actions {
+﻿using DSharpPlus.Entities;
+
+namespace RPGBot.Actions {
 
     public class Attack : ActionBase {
 
@@ -7,11 +9,8 @@
                 return 0;
             }
         }
-
-        public override string Emoji {
-            get {
-                return ":crossed_swords:";
-            }
+        public override DiscordEmoji GetEmoji() {
+            return DiscordEmoji.FromName(Bot.Client, ":crossed_swords:");
         }
     }
 }

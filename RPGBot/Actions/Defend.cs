@@ -1,4 +1,6 @@
-﻿namespace RPGBot.Actions {
+﻿using DSharpPlus.Entities;
+
+namespace RPGBot.Actions {
 
     public class Defend : ActionBase {
 
@@ -7,11 +9,8 @@
                 return 1;
             }
         }
-
-        public override string Emoji {
-            get {
-                return ":shield:";
-            }
+        public override DiscordEmoji GetEmoji() {
+            return DiscordEmoji.FromName(Bot.Client, ":shield:");
         }
     }
 }
