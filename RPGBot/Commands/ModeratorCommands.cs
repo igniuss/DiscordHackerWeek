@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using RPGBot.Models;
 
 namespace RPGBot.Commands {
     public class ModeratorCommands : BaseCommandModule {
@@ -12,11 +14,12 @@ namespace RPGBot.Commands {
                 await ctx.RespondAsync("[ERROR] Bot.Prefixes is Empty; Contact an administrator with this error.");
                 return;
             }
-            Bot.Prefixes.TryRemove(ctx.Guild.Id, out _);
+            Bot.Prefixes.RemoveAll(x => x.Id == ctx.Guild.Id);
             if (!string.IsNullOrEmpty(prefix)) {
-                Bot.Prefixes.TryAdd(ctx.Guild.Id, prefix);
+                var newPrefix = new GuildPrefix() { Id = ctx.Guild.Id, Prefix = prefix };
+                Bot.Prefixes.Add(newPrefix);
+                DB.Upsert("prefixes.db", "prefixes", newPrefix);
             }
-
             await ctx.RespondAsync($"New prefix is now `{Bot.GetPrefix(ctx.Guild)}` 👌");
         }
 
@@ -28,6 +31,5 @@ namespace RPGBot.Commands {
             var emoji = DiscordEmoji.FromName(ctx.Client, ":ping_pong:");
             await ctx.RespondAsync($"{emoji} Pong! Ping: {ctx.Client.Ping}ms");
         }
-
     }
 }
