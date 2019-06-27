@@ -4,8 +4,11 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using RPGBot.Commands;
+using RPGBot.Models;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RPGBot {
@@ -18,14 +21,9 @@ namespace RPGBot {
 
         public static ConcurrentDictionary<ulong, DiscordChannel> ConfiguredChannels { get; set; }
 
-        public static ConcurrentDictionary<ulong, string> Prefixes;
-
-        private Options Options { get; set; }
-
+        public static List<GuildPrefix> Prefixes;
         public Bot() {
-            //TODO: Serialize and Deserialize this!
-            Prefixes = new ConcurrentDictionary<ulong, string>();
-            ConfiguredChannels = new ConcurrentDictionary<ulong, DiscordChannel>();
+            Prefixes = LoadPrefixes();
         }
 
         public async Task RunAsync(Options options) {
@@ -96,11 +94,21 @@ namespace RPGBot {
 
         public static string GetPrefix(DiscordGuild guild) {
             if (Prefixes != null) {
-                if (Prefixes.TryGetValue(guild.Id, out var prefix)) {
+                var prefix = Prefixes.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
+                if(!string.IsNullOrEmpty(prefix)) {
                     return prefix;
                 }
             }
             return "!!";
+        }
+
+        private List<GuildPrefix> LoadPrefixes() {
+            var prefixes = DB.GetAll<GuildPrefix>("prefixes.db", "prefixes").ToList();
+            if(prefixes == null) {
+                prefixes = new List<GuildPrefix>();
+                DB.Insert("prefixes.db", "prefixes", prefixes);
+            }
+            return prefixes;
         }
 
         #region Event Callbacks

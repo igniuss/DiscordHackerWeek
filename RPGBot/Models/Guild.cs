@@ -25,9 +25,8 @@ namespace RPGBot.Models {
             return guild;
         }
 
-        public static bool UpdateGuild(ulong guildId, Guild guild) {
-            var success = DB.Update("guilds.db", "guilds", guild);
-            return success;
+        public bool Update() {
+            return DB.Update("guilds.db", "guilds", this);
         }
     }
 }
