@@ -1,4 +1,7 @@
 ﻿using DSharpPlus.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RPGBot.Characters {
 
@@ -17,6 +20,13 @@ namespace RPGBot.Characters {
                 this._Emoji = DiscordEmoji.FromName(Bot.Client, Emoji);
             }
             return this._Emoji;
+        }
+
+        public static IEnumerable<CharacterBase> GetAllCharacters() {
+            var actions = typeof(CharacterBase).Assembly.GetTypes()
+                .Where(t => t.IsSubclassOf(typeof(CharacterBase)) && !t.IsAbstract)
+                .Select(t => (CharacterBase)Activator.CreateInstance(t));
+            return actions;
         }
     }
 }

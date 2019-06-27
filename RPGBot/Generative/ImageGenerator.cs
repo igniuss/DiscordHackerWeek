@@ -59,12 +59,14 @@ namespace RPGBot.Generative {
 
             var random = new Random();
 
-            using (var img = new Image<Rgba32>(Configuration.Default, 512, 512, Rgba32.White)) {
+            using (var img = new Image<Rgba32>(Configuration.Default, 720, 720, Rgba32.White)) {
                 //append background
                 using (var bImg = Image.Load(backPath)) {
                     var width = img.Width;
                     var aspect = 1f / (bImg.Width / bImg.Height);
-                    bImg.Mutate(x => x.Resize(width, bImg.Height * (int)aspect));
+                    if (bImg.Width < img.Width || bImg.Height < img.Height) {
+                        bImg.Mutate(x => x.Resize(0, img.Height));
+                    }
                     img.Mutate(x => x.DrawImage(bImg, 1));
                 }
 
@@ -82,6 +84,18 @@ namespace RPGBot.Generative {
                         img.Mutate(x => x.DrawImage(cImg, point, 1));
                     }
                 }
+                img.Save(randomPath);
+                return randomPath;
+            }
+        }
+
+        public string SimulateDamage(string path, float percentage) {
+            using (var img = Image.Load(path)) {
+                var options = new GraphicsOptions() {
+                    BlendPercentage = percentage,
+                };
+                img.Mutate(x => x.Vignette(options, Rgba32.DarkRed));
+                var randomPath = Path.Combine("Output", $"{Guid.NewGuid()}.png");
                 img.Save(randomPath);
                 return randomPath;
             }

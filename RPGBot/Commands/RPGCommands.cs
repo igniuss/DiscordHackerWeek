@@ -12,27 +12,8 @@ namespace RPGBot.Commands {
 
     public class RPGCommands : BaseCommandModule {
 
-        [Command("setchannel")]
-        public async Task SetChannel(CommandContext ctx, DiscordChannel channel = null) {
-            if (channel == null) {
-                channel = ctx.Channel;
-            }
-
-            if (channel.Type != DSharpPlus.ChannelType.Text) {
-                await ctx.RespondAsync("This is not a text channel!");
-                return;
-            }
-            if (!Bot.ConfiguredChannels.ContainsKey(ctx.Guild.Id)) {
-                Bot.ConfiguredChannels.TryAdd(ctx.Guild.Id, null);
-            }
-            if (Bot.ConfiguredChannels.TryUpdate(ctx.Guild.Id, channel, null)) {
-                await ctx.RespondAsync($"{DiscordEmoji.FromName(ctx.Client, ":ok_hand:")}");
-            }
-        }
-
         public static async Task<string> GetURL(string path) {
             var msg = await Bot.ImageCache.SendFileAsync(path);
-            File.Delete(path);
             return msg.Attachments.First().Url;
         }
 
@@ -43,29 +24,11 @@ namespace RPGBot.Commands {
                 await guild.Owner.SendMessageAsync($"Hey there! Seems like you didn't set a default channel up for RPG-Bot! You can do so by heading into a channel, and typing {Bot.GetPrefix(guild)}setchannel 👌");
             }
 
-            var ev = new PublicEvent(channel);
+            var ev = new QuestEvent(channel);
             await ev.StartQuest();
             return;
         }
-        //[Command("MyStats")]
-        //[Description("Display your stats in this guild.")]
-        //[Aliases("Stats")]
-        //public async Task MyStats(CommandContext ctx) {
-        //    await ctx.RespondAsync("Getting stats");
-        //    var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
-        //    var embed = new DiscordEmbedBuilder()
-        //        .WithAuthor(name: ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
-        //        .WithTitle($"Stats for {ctx.Member.DisplayName}")
-        //        .WithColor(DiscordColor.Blue)
-        //        .WithDescription(
-        //        $"**Total Kills:** {player.EnemiesKilled.ToString("N0")}\n" +
-        //        $"**Quests Joined:** {player.TotalQuests.ToString("N0")}\n" +
-        //        $"**Quests Won**: {player.SuccessfulQuests.ToString("N0")}\n" +
-        //        $"**Gold**: {player.Gold.ToString("N0")}\n" +
-        //        $"\n__**Classes**__\n" +
-        //        $"XP: {string.Join("\nXP: ", player.Experience)}");
-        //    await ctx.RespondAsync(embed: embed);
-        //}
+
         [Command("event")]
         public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
             var guilds = ctx.Client.Guilds.Values.ToList();
@@ -83,7 +46,7 @@ namespace RPGBot.Commands {
 }
 
 public class ProgressBar {
-    private const int blockCount = 10;
+    private const int blockCount = 30;
 
     public static string GetProcessBar(double percentage) {
         var progressBlockCount = (int)MathF.Round(blockCount * (float)percentage);

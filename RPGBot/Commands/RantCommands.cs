@@ -48,9 +48,7 @@ namespace RPGBot.Commands {
 
             var imgUpload = await this.ImageCache.SendFileAsync(imgPath);
             var url = imgUpload.Attachments.First().Url;
-
-            File.Delete(imgPath);
-
+            
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Adventure Awaits!")
                 .WithImageUrl(url)
