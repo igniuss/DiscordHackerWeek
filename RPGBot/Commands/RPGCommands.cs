@@ -19,16 +19,36 @@ namespace RPGBot.Commands {
 
         public static async Task Mission(DiscordGuild guild) {
             //First we try to grab the channel defined, otherwise we pick default channel, and send a message to the owner on how to actually setup the default channel..
-            if (!Bot.ConfiguredChannels.TryGetValue(guild.Id, out var channel)) {
-                channel = guild.GetDefaultChannel();
-                await guild.Owner.SendMessageAsync($"Hey there! Seems like you didn't set a default channel up for RPG-Bot! You can do so by heading into a channel, and typing {Bot.GetPrefix(guild)}setchannel 👌");
+            var foundGuild = Bot.GuildOptions.Find(x => x.Id == guild.Id);
+            if (foundGuild != null) {
+                var channel = foundGuild.GetChannel();
+                var ev = new QuestEvent(channel);
+                await ev.StartQuest();
             }
-
-            var ev = new QuestEvent(channel);
-            await ev.StartQuest();
             return;
         }
 
+        [Command("setchannel")]
+        public async Task SetChannel(CommandContext ctx, DiscordChannel channel = null) {
+            if (channel == null) {
+                channel = ctx.Channel;
+            }
+            if (channel.Type == DSharpPlus.ChannelType.Text) {
+                var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
+                if (guild == null) {
+                    guild = new GuildOptions { Id = ctx.Guild.Id };
+                }
+                guild.Channel = channel.Id;
+                try {
+                    DB.Upsert(GuildOptions.DBName, GuildOptions.TableName, guild);
+                    await ctx.RespondAsync($"👌👌 New default channel is now {guild.GetChannel()}");
+                } catch (System.Exception ex) {
+                    Console.WriteLine(ex);
+                }
+            }
+            await ctx.RespondAsync("Error");
+
+        }
         [Command("event")]
         public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
             var guilds = ctx.Client.Guilds.Values.ToList();

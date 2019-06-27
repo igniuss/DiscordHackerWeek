@@ -11,17 +11,15 @@ namespace RPGBot.Models {
         public ulong GuildId { get; set; }
         public ulong[] Experience { get; set; }
         public ulong Gold { get; set; }
-        public CharacterBase CurrentCharacter;
         public int EnemiesKilled { get; set; }
         public int TotalQuests { get; set; }
         public int SuccessfulQuests { get; set; }
         public int MercenariesHired { get; set; }
 
-        public DiscordUser discordUser;
         public CharacterBase character;
+        public DiscordUser discordUser;
 
-        public Player() {
-        }
+        public Player() { }
 
         public static Player GetPlayer(ulong guildId, ulong id) {
             var player = DB.FindOne<Player>($"{guildId}.db", "players", x => x.Id == id);
@@ -59,7 +57,7 @@ namespace RPGBot.Models {
             return CalculateLevel(exp);
         }
 
-        public double GetHP() {
+        public float GetHP() {
             if (this.character == null) { return 0f; }
             var lvl = GetCurrentLevel();
             var _base = 100;

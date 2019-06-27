@@ -19,12 +19,10 @@ namespace RPGBot {
         public Options Options { get; private set; }
         public static CommandsNextExtension Commands { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
-
-        public static ConcurrentDictionary<ulong, DiscordChannel> ConfiguredChannels { get; set; }
-
-        public static List<GuildPrefix> Prefixes;
+        
+        public static List<GuildOptions> GuildOptions;
         public Bot() {
-            Prefixes = LoadPrefixes();
+            GuildOptions = LoadGuildOptions();
         }
 
         public async Task RunAsync(Options options) {
@@ -94,8 +92,8 @@ namespace RPGBot {
         }
 
         public static string GetPrefix(DiscordGuild guild) {
-            if (Prefixes != null) {
-                var prefix = Prefixes.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
+            if (GuildOptions != null) {
+                var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
                 if(!string.IsNullOrEmpty(prefix)) {
                     return prefix;
                 }
@@ -103,10 +101,10 @@ namespace RPGBot {
             return "!!";
         }
 
-        private List<GuildPrefix> LoadPrefixes() {
-            var prefixes = DB.GetAll<GuildPrefix>("prefixes.db", "prefixes").ToList();
+        private List<GuildOptions> LoadGuildOptions() {
+            var prefixes = DB.GetAll<GuildOptions>("prefixes.db", "prefixes").ToList();
             if(prefixes == null) {
-                prefixes = new List<GuildPrefix>();
+                prefixes = new List<GuildOptions>();
                 DB.Insert("prefixes.db", "prefixes", prefixes);
             }
             return prefixes;

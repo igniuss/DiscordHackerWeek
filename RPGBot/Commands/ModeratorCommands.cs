@@ -12,15 +12,18 @@ namespace RPGBot.Commands {
         [Command("prefix")]
         [Description("Set the prefix")]
         public async Task SetPrefix(CommandContext ctx, string prefix) {
-            if (Bot.Prefixes == null) {
+            if (Bot.GuildOptions == null) {
                 await ctx.RespondAsync("[ERROR] Bot.Prefixes is Empty; Contact an administrator with this error.");
                 return;
             }
-            Bot.Prefixes.RemoveAll(x => x.Id == ctx.Guild.Id);
+
             if (!string.IsNullOrEmpty(prefix)) {
-                var newPrefix = new GuildPrefix() { Id = ctx.Guild.Id, Prefix = prefix };
-                Bot.Prefixes.Add(newPrefix);
-                DB.Upsert("prefixes.db", "prefixes", newPrefix);
+                var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
+                if (guild == null) { guild = new GuildOptions { Id = ctx.Guild.Id }; }
+
+                guild.Prefix = prefix;
+                Bot.GuildOptions.Add(guild);
+                DB.Upsert(GuildOptions.DBName, GuildOptions.TableName, guild);
             }
             await ctx.RespondAsync($"New prefix is now `{Bot.GetPrefix(ctx.Guild)}` 👌");
         }
