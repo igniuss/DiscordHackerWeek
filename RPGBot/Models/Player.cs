@@ -1,7 +1,9 @@
 ﻿using DSharpPlus.Entities;
 using RPGBot.Characters;
 using RPGBot.Helpers;
+using RPGBot.Items;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RPGBot.Models {
@@ -14,8 +16,10 @@ namespace RPGBot.Models {
         public int EnemiesKilled { get; set; }
         public int TotalQuests { get; set; }
         public int SuccessfulQuests { get; set; }
-        public int MercenariesHired { get; set; }
         public int DeathCounter { get; set; }
+        public int LifetimeMercenariesHired { get; set; }
+        public int CurrentMercenaries { get; set; }
+        public List<ItemBase> Items { get; set; }
 
         public CharacterBase character;
         public DiscordUser discordUser;
@@ -35,6 +39,10 @@ namespace RPGBot.Models {
             if (player.Experience == null) {
                 var characters = Characters.CharacterBase.GetAllCharacters();
                 player.Experience = new ulong[characters.Count()];
+            }
+
+            if(player.Items == null) {
+                player.Items = new List<ItemBase>();
             }
 
             return player;

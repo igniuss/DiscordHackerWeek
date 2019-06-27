@@ -61,6 +61,60 @@ namespace RPGBot.Commands {
             }
             await ctx.RespondAsync($"Executing on {string.Join(", ", guilds.Select(x => x.Name))}");
         }
+
+        [Command("shop")]
+        [Description("View items that can be purchased.")]
+        public async Task Shop(CommandContext ctx) {
+            var embed = new DiscordEmbedBuilder() {
+                Title = "Shop",
+                Description = Items.Shop.GetShopDescription(),
+                Color = DiscordColor.DarkGreen
+            };
+            await ctx.RespondAsync(embed: embed);
+        }
+
+        [Command("buy")]
+        [Description("Buy an item from the shop.")]
+        public async Task Buy(CommandContext ctx, string itemName, int quantity = 1) {
+            var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
+            var item = Items.ItemBase.GetAllItems().Where(x => x.Name.Equals(itemName, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+            if (item == null) {
+                await ctx.RespondAsync(itemName + " is not an item in the shop. Use the ``shop`` command to see available items.");
+                return;
+            }
+            var price = (ulong)quantity * item.Price;
+            if (player.Gold < price) {
+                await ctx.RespondAsync($"You do not have enough gold to purchase this item.\nItem Cost: {price}. Your gold: {player.Gold}");
+                return;
+            }
+            // player can buy the item, subtract gold and give item
+            player.Gold -= price;
+            player.LifetimeMercenariesHired += quantity;
+            player.CurrentMercenaries += quantity;
+            for (var i = 0; i < quantity; i++) {
+                player.Items.Add(item);
+            }
+            player.Update();
+        }
+
+        [Command("inventory")]
+        [Description("View the items you are currently holding.")]
+        public async Task Inventory(CommandContext ctx) {
+            var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
+            var output = "";
+            var itemTypes = Items.ItemBase.GetAllItems();
+            foreach(var t in itemTypes) {
+                var quantity = player.Items.Where(item => item.GetType() == t.GetType()).Count();
+                output += $"{t.GetEmoji()} {t.Name}: {quantity}\n";
+            }
+            var embed = new DiscordEmbedBuilder()
+                .WithTitle("Your Inventory")
+                .WithAuthor(ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
+                .WithDescription(output)
+                .WithColor(DiscordColor.Blue);
+               
+            await ctx.RespondAsync(embed: embed);
+        }
     }
 }
 
