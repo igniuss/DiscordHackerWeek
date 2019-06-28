@@ -31,7 +31,7 @@ namespace RPGBot.Models {
 
         public List<ItemBase> Items { get; set; }
 
-        public CharacterBase character;
+        public CharacterBase character { get; set; }
         //public DiscordUser discordUser;
 
         public Player() { }

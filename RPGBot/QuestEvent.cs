@@ -92,6 +92,7 @@ Pick your Fighter!
                     }
                     var player = Player.GetPlayer(Channel.GuildId, user.Id);
                     player.TotalQuests++;
+                    player.character = character;
                     player.Update();
 
                     CurrentPlayers[character].Add(player.Id);
@@ -160,6 +161,7 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                 if (CurrentHP <= 0f) { break; }
                 var emb = new DiscordEmbedBuilder(embed)
                     .WithTitle($"The quest continues - {QuestName}")
+                    .WithDescription($"{QuestName}")
                     .WithImageUrl(url)
                     .WithColor(DiscordColor.LightGray);
 
