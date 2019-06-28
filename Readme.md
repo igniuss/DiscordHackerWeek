@@ -20,8 +20,11 @@ Once you encounter an enemy, you'll be able to pick an action.
 The actions are as follows
 
 ⚔ *Attack*
+
 🛡 *Defend*
+
 🏃‍♂️ *Flee*
+
 
 Attacking will damage the opponent, the amount will depend on which class you've taken, and what level you've reached in that class.
 Defending will block damage from the enemy, the amount also depends on the classes and level.
