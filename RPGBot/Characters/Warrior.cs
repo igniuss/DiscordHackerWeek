@@ -1,4 +1,6 @@
-﻿namespace RPGBot.Characters {
+﻿using DSharpPlus.Entities;
+
+namespace RPGBot.Characters {
 
     // Warrior has an attack bonus, but average health and gold earned
     public class Warrior : CharacterBase {
@@ -15,7 +17,11 @@
             get { return 1; }
         }
 
-        public override string Emoji {
+        public override DiscordEmoji GetEmoji() {
+            return DiscordEmoji.FromName(Bot.Client, Emoji);
+        }
+
+        public string Emoji {
             get {
                 return ":crossed_swords:";
             }

@@ -70,7 +70,7 @@ namespace RPGBot.Commands {
             }
         }
 
-        [Command("shop")]
+        [Command("shop"), Aliases("store")]
         [Description("View items that can be purchased.")]
         public async Task Shop(CommandContext ctx) {
             var embed = new DiscordEmbedBuilder() {
@@ -98,11 +98,14 @@ namespace RPGBot.Commands {
             // player can buy the item, subtract gold and give item
             player.Gold -= price;
             player.LifetimeMercenariesHired += quantity;
-            player.CurrentMercenaries += quantity;
-            for (var i = 0; i < quantity; i++) {
+            var first = player.Items.FirstOrDefault(x => x.GetType() == item.GetType());
+            if(first == null) {
                 player.Items.Add(item);
+                first = item;
             }
+            first.Count += quantity;
             player.Update();
+            await ctx.RespondAsync($"{ctx.Member.Mention}, you bought {quantity} {item.Name} for {price} gold.\nYou have {player.Gold} gold remaining.");
         }
     }
 }

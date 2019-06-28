@@ -15,7 +15,6 @@ namespace RPGBot.Commands {
         public const float ChanceToHeal = 0.30f;
         //public const float ChanceToBoss = 0.75f;
 
-
         private static ImageGenerator ImageGenerator { get; set; } = new ImageGenerator();
         private static QuestGenerator QuestGenerator { get; set; } = new QuestGenerator();
         private static NamesGenerator NamesGenerator { get; set; } = new NamesGenerator();
@@ -31,9 +30,13 @@ namespace RPGBot.Commands {
             CurrentPlayers = new ConcurrentDictionary<CharacterBase, List<Player>>();
         }
 
-        public async Task RandomDelayMinutes(int min, int max) {
+        public async Task RandomDelayMinutes(float min, float max) {
             var r = new Random();
-            await Task.Delay(TimeSpan.FromMinutes(r.Next(min, max)));
+            var t = r.NextDouble();
+            var a = min;
+            var b = max;
+
+            await Task.Delay(TimeSpan.FromMinutes(a + (b - a) * t));
         }
 
         public async Task<ConcurrentDictionary<DiscordEmoji, int>> GetReactions(DiscordMessage msg, IEnumerable<DiscordEmoji> emojis, TimeSpan timeout) {
@@ -42,11 +45,13 @@ namespace RPGBot.Commands {
 
             foreach (var emoji in emojis) {
                 await msg.CreateReactionAsync(emoji);
+                await Task.Delay(500);
             }
             await Task.Delay(timeout);
             var reactions = new ConcurrentDictionary<DiscordEmoji, List<DiscordUser>>();
             foreach (var emoji in emojis) {
                 var reacts = await msg.GetReactionsAsync(emoji);
+                await Task.Delay(500);
                 reactions.TryAdd(emoji, reacts.ToList());
             }
 
@@ -90,6 +95,7 @@ Pick your Fighter!
                 .WithFooter("[RPG-Bot] Created by Jeff&Iggy 👋");
 
             var msg = await Channel.SendMessageAsync(embed: embed);
+            await Task.Delay(500);
 
             #endregion Join Quest Message
 
@@ -99,11 +105,13 @@ Pick your Fighter!
 
             foreach (var emoji in characterEmojis) {
                 await msg.CreateReactionAsync(emoji);
+                await Task.Delay(500);
             }
             await Task.Delay(TimeSpan.FromMinutes(0.1));
             var reactions = new ConcurrentDictionary<DiscordEmoji, List<DiscordUser>>();
             foreach (var emoji in characterEmojis) {
                 var reacts = await msg.GetReactionsAsync(emoji);
+                await Task.Delay(500);
                 reactions.TryAdd(emoji, reacts.ToList());
             }
 
@@ -132,8 +140,10 @@ Pick your Fighter!
             }
             if (CurrentPlayers.Count == 0) {
                 await msg.DeleteAsync();
+                await Task.Delay(500);
                 return;
             }
+
             #region SET HP
 
             CurrentHP = 0f;
@@ -159,26 +169,27 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                  .WithColor(DiscordColor.Blue);
 
             msg = await Channel.SendMessageAsync(embed: embed);
+            await Task.Delay(500);
 
             #endregion Start Quest Message
 
             #region Encounter Loop
 
             var random = new Random();
-            var encounterCount = random.Next(1, 10);
+            var encounterCount = random.Next(4, 20);
             for (var i = 0; i < encounterCount; i++) {
                 //await Task.Delay(1000);
-                await RandomDelayMinutes(1, 5);
+                await RandomDelayMinutes(0.25f, 2f);
                 var enemy = ImageGenerator.RandomCharacter();
-                var totalExp = CurrentPlayers.Values.SelectMany(x => x).Sum(x => (long)x.GetCurrentExp());
-                var totalLevel = Player.CalculateLevel((ulong)totalExp);
-
                 if (random.NextDouble() > 0.5) {
                     backdrop = ImageGenerator.RandomBackground();
                 }
 
+                var totalExp = CurrentPlayers.Values.SelectMany(x => x).Sum(x => (long)x.GetCurrentExp());
+                var totalLevel = Player.CalculateLevel((ulong)totalExp);
+
                 //level between current-5 & current+2
-                var enemyLevel = Math.Max(random.Next(totalLevel - 5, totalLevel + 2), 1);
+                var enemyLevel = Math.Max(random.Next(totalLevel - 3, totalLevel + 3), 1);
 
                 await Ecounter(enemy, backdrop, embed, enemyLevel);
                 if (CurrentHP <= 0f) { break; }
@@ -188,29 +199,41 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                     .WithColor(DiscordColor.LightGray);
 
                 await Channel.SendMessageAsync(embed: emb);
+                await Task.Delay(500);
             }
 
             #endregion Encounter Loop
+
             //Boss fight OR chest
+
             #region BOSSFIGHT
+
             if (CurrentHP > 0) {
-                await RandomDelayMinutes(1, 3);
+                await RandomDelayMinutes(0.25f, 1f);
                 var enemy = ImageGenerator.RandomCharacter(true);
+                backdrop = ImageGenerator.RandomBackground();
+
                 var totalExp = CurrentPlayers.Values.SelectMany(x => x).Sum(x => (long)x.GetCurrentExp());
                 var totalLevel = Player.CalculateLevel((ulong)totalExp);
 
                 var enemyLevel = Math.Max(random.Next(totalLevel - 2, totalLevel + 20), 1);
-                backdrop = ImageGenerator.RandomBackground();
                 await Ecounter(enemy, backdrop, embed, enemyLevel);
             }
-            #endregion
+
+            #endregion BOSSFIGHT
+
+            #region SUCCESS
+
             if (CurrentHP > 0) {
                 await Channel.SendMessageAsync($"Event has been completed!\n\nCongratulations to\n{string.Join(",\n", CurrentPlayers.Values.SelectMany(x => x).Select(x => x.discordUser.Username))}");
+                await Task.Delay(500);
                 foreach (var player in CurrentPlayers.Values.SelectMany(x => x)) {
                     player.SuccessfulQuests++;
                     player.Update();
                 }
             }
+
+            #endregion SUCCESS
         }
 
         public async Task Ecounter(string enemy, string backdrop, DiscordEmbed ogEmbed, int level) {
@@ -219,7 +242,6 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                 var original = ImageGenerator.CreateImage(enemy, backdrop);
                 var url = await RPGCommands.GetURL(original);
                 var actions = Actions.ActionBase.GetAllActions();
-
 
                 var enemyLevel = level;
 
@@ -261,6 +283,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     }
                     //Calculate damage
                     var msg = await Channel.SendMessageAsync(embed: embed);
+                    await Task.Delay(500);
 
                     var actionQueue = new ConcurrentDictionary<Player, Actions.ActionBase>();
                     var players = CurrentPlayers.Values.SelectMany(x => x);
@@ -288,6 +311,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     //add the actual reactions
                     foreach (var action in actions) {
                         await msg.CreateReactionAsync(action.GetEmoji());
+                        await Task.Delay(500);
                     }
 
                     var timeoutTimer = Stopwatch.StartNew();
@@ -299,7 +323,6 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     }
                     //remove the handler
                     Bot.Client.MessageReactionAdded -= handler;
-
 
                     #region CALCULATE
 
@@ -338,28 +361,36 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                         CurrentHP -= damageReceived - damageBlocked;
                     }
 
-
-
                     if (players.Count() == 0) {
-                        await Channel.SendMessageAsync($"Everyone ran in {turnCount} counts.");
-                        break;
+                        await Channel.SendMessageAsync($"Everyone ran in {turnCount} turns.");
+                        await Task.Delay(500);
+                        return;
                     }
 
                     if (CurrentHP <= 0f) {
+
+                        #region PLAYER DEATH
+
                         foreach (var player in players) {
-                            player.DeathCounter++;
                             var deathExp = -(long)Math.Ceiling(enemyLevel * random.Next(1, 5) * 5f);
-                            player.IncreaseExperience(deathExp);
+                            player.Death(deathExp);
+
                             player.Update();
                         }
                         await Channel.SendMessageAsync($"The Creature has defeated everyone in {turnCount} turns!");
+                        await Task.Delay(500);
+
+                        #endregion PLAYER DEATH
+
                         return;
                     }
+
                     #endregion CALCULATE
 
                     await Task.Delay(100);
                 }
 
+                #region PLAYER VICTORY
 
                 var goldReceived = (ulong)Math.Ceiling(enemyLevel * random.Next(1, 5) * 25f);
                 var expeReceived = (long)Math.Ceiling(enemyLevel * random.Next(1, 5) * 15f);
@@ -368,16 +399,11 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                 var heal = random.NextDouble() <= ChanceToHeal;
 
                 foreach (var player in CurrentPlayers.Values.SelectMany(x => x)) {
-                    player.EnemiesKilled++;
-                    player.IncreaseGold(goldReceived);
-                    player.IncreaseExperience(expeReceived);
+                    player.Victory(expeReceived, goldReceived);
+                    player.Update();
+
                     if (heal) {
                         healed += Math.Min(MaxHP, CurrentHP + (player.GetHP() * 0.15f));
-                    }
-                    try {
-                        player.Update();
-                    } catch (System.Exception ex) {
-                        await Channel.SendMessageAsync(ex.ToString());
                     }
                 }
 
@@ -391,14 +417,18 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
 Every survivor collected {goldReceived} gold.
 Your party has healed up to {CurrentHP}HP");
                     await Channel.SendMessageAsync(embed: embed);
+                    await Task.Delay(500);
                 } else {
                     await Channel.SendMessageAsync($@"You've defeated a mighty opponent in {turnCount} turns!
 Every survivor collected {goldReceived} gold.");
+                    await Task.Delay(500);
                 }
-
             } catch (System.Exception ex) {
                 await Channel.SendMessageAsync(ex.ToString());
+                await Task.Delay(500);
             }
+
+            #endregion PLAYER VICTORY
         }
     }
 }
