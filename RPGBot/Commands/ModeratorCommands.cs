@@ -1,10 +1,11 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using RPGBot.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RPGBot.Commands {
 
@@ -15,7 +16,6 @@ namespace RPGBot.Commands {
         public async Task SetPrefix(CommandContext ctx, string prefix) {
             // allow admins or bot owners to change the prefix
             if (ctx.Member.PermissionsIn(ctx.Channel).HasPermission(Permissions.Administrator) || Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
-
                 if (Bot.GuildOptions == null) {
                     await ctx.RespondAsync("[ERROR] Bot.Prefixes is Empty; Contact an administrator with this error.");
                     return;
@@ -32,6 +32,22 @@ namespace RPGBot.Commands {
                 await ctx.RespondAsync($"New prefix is now `{Bot.GetPrefix(ctx.Guild)}` 👌");
             } else {
                 await ctx.RespondAsync("Please contact an administrator to change the prefix for this guild");
+            }
+        }
+
+        [Command("event")]
+        public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
+            if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
+                var channels = Bot.GuildOptions.Select(x => x.GetChannel());
+                if (onlyHere) {
+                    channels = new List<DiscordChannel>() { ctx.Channel };
+                }
+                foreach (var channel in channels) {
+                    var quest = new QuestEvent(channel);
+                    quest.StartQuest();
+                }
+
+                await ctx.RespondAsync($"Executing on {string.Join("\n", Bot.GuildOptions.Select(x => x.GetChannel().Guild.Name))}");
             }
         }
 

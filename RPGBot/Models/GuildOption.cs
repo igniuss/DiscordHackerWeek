@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace RPGBot.Models {
@@ -13,15 +14,19 @@ namespace RPGBot.Models {
         public ulong Channel { get; set; }
         private DiscordChannel channel;
         public DiscordChannel GetChannel() {
-            if (this.channel == null || this.channel.Id != Channel) {
-                if (Channel == 0) {
-                    this.channel = Bot.Client.Guilds[Id].GetDefaultChannel();
-                    Channel = this.channel.Id;
-                } else {
-                    this.channel = Bot.Client.Guilds[Id].GetChannel(Channel);
+            if (Bot.Client.Guilds.Any(x => x.Key == Id)) {
+
+                if (this.channel == null || this.channel.Id != Channel) {
+                    if (Channel == 0) {
+                        this.channel = Bot.Client.Guilds[Id].GetDefaultChannel();
+                        Channel = this.channel.Id;
+                    } else {
+                        this.channel = Bot.Client.Guilds[Id].GetChannel(Channel);
+                    }
                 }
+                return this.channel;
             }
-            return this.channel;
+            return null;
         }
     }
 }

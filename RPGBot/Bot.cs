@@ -19,7 +19,7 @@ namespace RPGBot {
         public Options Options { get; private set; }
         public static CommandsNextExtension Commands { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
-        public Timer PeriodicEvent { get; private set; }
+        //public Timer PeriodicEvent { get; private set; }
 
         public static List<GuildOption> GuildOptions;
         public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
@@ -61,9 +61,7 @@ namespace RPGBot {
             });
 
             Commands.RegisterCommands<ModeratorCommands>();
-            Commands.RegisterCommands<RantCommands>();
             Commands.RegisterCommands<RPGCommands>();
-            Commands.RegisterCommands<InfoCommands>();
             Commands.RegisterCommands<HelpCommands>();
 
             Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
@@ -77,10 +75,17 @@ namespace RPGBot {
 
             await Client.ConnectAsync();
 
-            PeriodicEvent = new Timer(TimeSpan.FromHours(1f).TotalMilliseconds);
-            PeriodicEvent.Elapsed += OnUpdate;
-            PeriodicEvent.Start();
-            LastEvent = DateTime.Now;
+            //PeriodicEvent = new Timer(TimeSpan.FromHours(1f).TotalMilliseconds);
+            //PeriodicEvent.Elapsed += OnUpdate;
+            //PeriodicEvent.Start();
+
+            while (true) {
+                var now = DateTime.Now;
+                var minutes = now.Minute;
+                var left = 60 - minutes;
+                await Task.Delay(TimeSpan.FromMinutes(left));
+                OnUpdate(null, null);
+            }
             await Task.Delay(-1);
         }
 
@@ -90,27 +95,25 @@ namespace RPGBot {
 
         private async Task OnHeartbeat(HeartbeatEventArgs e) {
             //calculate time left till new mission
-            var span = TimeSpan.FromMilliseconds(PeriodicEvent.Interval);
-            var timeLeft = LastEvent + span - DateTime.Now;
+            var timeLeft = TimeSpan.FromMinutes(60 - DateTime.Now.Minute);
 
             //get all the other data in here boys
             var serverCount = Bot.Client.Guilds.Count;
             var memberCount = Bot.Client.Guilds.Sum(x => x.Value.MemberCount);
-            var activity = new DiscordActivity($"{Math.Floor(timeLeft.TotalMinutes)}:{timeLeft.Seconds.ToString("##")} until event.\nIn {serverCount} servers with {memberCount} members.", ActivityType.Streaming);
+            var activity = new DiscordActivity($"⚔ {Math.Floor(timeLeft.TotalMinutes)} minutes until next event.    [{serverCount} servers with {memberCount} members]", ActivityType.Streaming);
             await Bot.Client.UpdateStatusAsync(activity, UserStatus.Online);
         }
-
-        private DateTime LastEvent { get; set; }
 
         private void OnUpdate(object sender, ElapsedEventArgs e) {
             Log(LogLevel.Info, "Starting Event");
             foreach (var option in GuildOptions) {
-                var quest = new QuestEvent(option.GetChannel());
+                var channel = option.GetChannel();
+                if(channel == null) { continue; }
+                var quest = new QuestEvent(channel);
 
                 //We don't wanna call this async. Start them all at once
                 quest.StartQuest();
             }
-            LastEvent = DateTime.Now;
         }
 
         private async Task OnMessageCreated(MessageCreateEventArgs e) {

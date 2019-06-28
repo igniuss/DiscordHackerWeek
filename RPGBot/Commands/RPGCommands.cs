@@ -2,33 +2,32 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using RPGBot.Helpers;
 using RPGBot.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace RPGBot.Commands {
 
     public class RPGCommands : BaseCommandModule {
-        
 
         public static async Task<string> GetURL(string path) {
             var msg = await Bot.ImageCache.SendFileAsync(path);
             return msg.Attachments.First().Url;
         }
 
-        public static async Task Mission(DiscordGuild guild) {
-            //First we try to grab the channel defined, otherwise we pick default channel, and send a message to the owner on how to actually setup the default channel..
-            var foundGuild = Bot.GuildOptions.Find(x => x.Id == guild.Id);
-            if (foundGuild != null) {
-                var channel = foundGuild.GetChannel();
-                var ev = new QuestEvent(channel);
-                await ev.StartQuest();
-            }
-            return;
-        }
+        //public static async Task Mission(DiscordGuild guild) {
+        //    //First we try to grab the channel defined, otherwise we pick default channel, and send a message to the owner on how to actually setup the default channel..
+        //    var foundGuild = Bot.GuildOptions.Find(x => x.Id == guild.Id);
+        //    if (foundGuild != null) {
+        //        var channel = foundGuild.GetChannel();
+        //        var ev = new QuestEvent(channel);
+        //        await ev.StartQuest();
+        //    }
+        //    return;
+        //}
 
         [Command("setchannel")]
         public async Task SetChannel(CommandContext ctx, DiscordChannel channel = null) {
@@ -52,21 +51,6 @@ namespace RPGBot.Commands {
                 }
             } else {
                 await ctx.RespondAsync("This command can only be used by server admins.");
-            }
-        }
-        [Command("event")]
-        public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
-            if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
-                var guilds = ctx.Client.Guilds.Values.ToList();
-                if (onlyHere) {
-                    guilds = new List<DiscordGuild> {
-                    ctx.Guild
-                };
-                }
-                foreach (var guild in guilds) {
-                    _ = Mission(guild);
-                }
-                await ctx.RespondAsync($"Executing on {string.Join(", ", guilds.Select(x => x.Name))}");
             }
         }
 
@@ -99,13 +83,43 @@ namespace RPGBot.Commands {
             player.Gold -= price;
             player.LifetimeMercenariesHired += quantity;
             var first = player.Items.FirstOrDefault(x => x.GetType() == item.GetType());
-            if(first == null) {
+            if (first == null) {
                 player.Items.Add(item);
                 first = item;
             }
             first.Count += quantity;
             player.Update();
             await ctx.RespondAsync($"{ctx.Member.Mention}, you bought {quantity} {item.Name} for {price} gold.\nYou have {player.Gold} gold remaining.");
+        }
+
+        [Command("MyStats")]
+        [Description("Display your stats in this guild.")]
+        [Aliases("Stats")]
+        public async Task MyStats(CommandContext ctx) {
+            var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
+            var characters = Characters.CharacterBase.GetAllCharacters();
+            var exp = new Dictionary<Characters.CharacterBase, ulong>();
+            foreach (var character in characters) {
+                exp.Add(character, player.Experience.GetSafe<ulong>(character.Id, 0));
+            }
+            var embed = new DiscordEmbedBuilder()
+                .WithAuthor(name: ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
+                .WithTitle($"Stats for {ctx.Member.DisplayName}")
+                .WithColor(DiscordColor.Blue)
+                .WithDescription(
+$@"**Total Kills:** {player.EnemiesKilled.ToString("N0")}
+**Quests Joined:** {player.TotalQuests.ToString("N0")}
+**Quests Completed**: {player.SuccessfulQuests.ToString("N0")}
+**Gold**: {player.Gold.ToString("N0")}
+
+__**Items**__
+{string.Join("\n", player.Items.Select(x => $"{x.GetEmoji()} {x.Name} - {x.Count}"))}
+
+__**Classes**__
+Experience :
+{string.Join("\n", exp.Select(kv => $"{kv.Key.GetEmoji()} Level {Player.CalculateLevel(kv.Value)} - {kv.Value} exp"))}"
+ );
+            await ctx.RespondAsync(embed: embed);
         }
     }
 }
