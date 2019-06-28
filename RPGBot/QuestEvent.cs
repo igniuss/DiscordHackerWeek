@@ -100,7 +100,12 @@ Pick your Fighter!
                 }
             }
             if (CurrentPlayers.Count == 0) {
-                await msg.DeleteAsync();
+                var emb = new DiscordEmbedBuilder(embed)
+                    .WithDescription(embed.Description + "\n\nNo-one joined the Quest.")
+                    .WithTitle("[Adventure] - Empty 😔");
+
+                await msg.ModifyAsync(embed: new Optional<DiscordEmbed>(emb));
+                await msg.DeleteAllReactionsAsync();
                 await Task.Delay(500);
                 return;
             }
@@ -120,6 +125,8 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                  .WithTitle($"Quest: {QuestName}")
                  .WithColor(DiscordColor.Blue);
 
+            await msg.DeleteAsync();
+            await Task.Delay(500);
             msg = await Channel.SendMessageAsync(embed: embed);
             await Task.Delay(500);
 
@@ -165,7 +172,10 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                     .WithImageUrl(url)
                     .WithColor(DiscordColor.LightGray);
 
-                await Channel.SendMessageAsync(embed: emb);
+
+                await msg.DeleteAsync();
+                await Task.Delay(500);
+                msg = await Channel.SendMessageAsync(embed: emb);
                 await Task.Delay(500);
             }
 
@@ -342,6 +352,11 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     if (damageReceived > damageBlocked) {
                         CurrentHP -= damageReceived - damageBlocked;
                     }
+
+                    #region DELETE PREVIOUS BATTLE
+                    await msg.DeleteAsync();
+                    await Task.Delay(500);
+                    #endregion
 
                     playerIds = CurrentPlayers.Values.SelectMany(x => x);
 
