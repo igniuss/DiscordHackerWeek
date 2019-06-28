@@ -62,7 +62,7 @@ namespace RPGBot.Commands {
             await ctx.RespondAsync($"Executing on {string.Join(", ", guilds.Select(x => x.Name))}");
         }
 
-        [Command("shop")]
+        [Command("shop"), Aliases("store")]
         [Description("View items that can be purchased.")]
         public async Task Shop(CommandContext ctx) {
             var embed = new DiscordEmbedBuilder() {
@@ -90,35 +90,15 @@ namespace RPGBot.Commands {
             // player can buy the item, subtract gold and give item
             player.Gold -= price;
             player.LifetimeMercenariesHired += quantity;
-            player.CurrentMercenaries += quantity;
-            for (var i = 0; i < quantity; i++) {
-                if (!player.Items.Any(x => x.GetType() == item.GetType())) {
-                    player.Items.Add(item);
-                }
-                var found = player.Items.First(x => x.GetType() == item.GetType());
-                found.Count++;
+            var first = player.Items.FirstOrDefault(x => x.GetType() == item.GetType());
+            if(first == null) {
+                player.Items.Add(item);
+                first = item;
             }
+            first.Count += quantity;
+
             player.Update();
             await ctx.RespondAsync($"{ctx.Member.Mention}, you bought {quantity} {item.Name} for {price} gold.\nYou have {player.Gold} gold remaining.");
-        }
-
-        [Command("inventory")]
-        [Description("View the items you are currently holding.")]
-        public async Task Inventory(CommandContext ctx) {
-            var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
-            var output = "";
-            var itemTypes = Items.ItemBase.GetAllItems();
-            foreach (var t in itemTypes) {
-                var quantity = player.Items.Where(item => item.GetType() == t.GetType()).Count();
-                output += $"{t.GetEmoji()} {t.Name}: {quantity}\n";
-            }
-            var embed = new DiscordEmbedBuilder()
-                .WithTitle("Your Inventory")
-                .WithAuthor(ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
-                .WithDescription(output)
-                .WithColor(DiscordColor.Blue);
-
-            await ctx.RespondAsync(embed: embed);
         }
     }
 }
