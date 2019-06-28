@@ -32,7 +32,7 @@ namespace RPGBot.Models {
         public List<ItemBase> Items { get; set; }
 
         public CharacterBase character;
-        public DiscordUser discordUser;
+        //public DiscordUser discordUser;
 
         public Player() { }
 
@@ -125,6 +125,7 @@ namespace RPGBot.Models {
         internal void Death(long deathExp) {
             IncreaseExperience(deathExp);
             CurrentMercenaries = 0;
+            character = null;
         }
 
         internal void Victory(long expeReceived, ulong goldReceived) {
