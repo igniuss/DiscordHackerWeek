@@ -77,7 +77,7 @@ namespace RPGBot {
 
             await Client.ConnectAsync();
 
-            PeriodicEvent = new Timer(TimeSpan.FromHours(0.1f).TotalMilliseconds);
+            PeriodicEvent = new Timer(TimeSpan.FromHours(1f).TotalMilliseconds);
             PeriodicEvent.Elapsed += OnUpdate;
             PeriodicEvent.Start();
             LastEvent = DateTime.Now;
