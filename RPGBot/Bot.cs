@@ -46,6 +46,7 @@ namespace RPGBot {
             Client.GuildUnavailable += OnGuildUnavailable;
             Client.Heartbeated += OnHeartbeat;
             Client.SocketClosed += OnSocketClosed;
+            Client.GuildCreated += OnGuildCreated;
 
             #endregion EVENTS
 
@@ -87,6 +88,11 @@ namespace RPGBot {
                 OnUpdate(null, null);
             }
             await Task.Delay(-1);
+        }
+
+        private async Task OnGuildCreated(GuildCreateEventArgs e) {
+            var channel = e.Guild.GetDefaultChannel();
+            await channel.SendMessageAsync("Thank you for inviting RPG Bot! Here are some tips to get you started. My default prefix is ``!!`` and can be changed by any admin of the server by using the command ``!!prefix newPrefix``. Adventures begin at the start of every hour. Currently, the adventures will show up in this channel. Admins can change the channel by using the command ``!!setchannel #otherchannel`` or by saying ``!!setchannel`` in the channel they wish to use. If you need any help, have suggestions or bugs to report, or just want to chat, you can join our support server here -> https://discord.gg/VMBn2yV");
         }
 
         private async Task OnSocketClosed(SocketCloseEventArgs e) {
