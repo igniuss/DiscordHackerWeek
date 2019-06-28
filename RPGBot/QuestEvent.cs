@@ -343,6 +343,8 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                         CurrentHP -= damageReceived - damageBlocked;
                     }
 
+                    playerIds = CurrentPlayers.Values.SelectMany(x => x);
+
                     if (playerIds.Count() == 0) {
                         await Channel.SendMessageAsync($"Everyone ran in {turnCount} turns.");
                         await Task.Delay(500);
