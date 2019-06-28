@@ -1,4 +1,5 @@
-﻿__**Credits**__
+﻿https://i.imgur.com/kJI2lzv.png
+__**Credits**__
 
 __Coders/Developers__
 [Jeff](https://discordapp.com/users/330452192391593987)

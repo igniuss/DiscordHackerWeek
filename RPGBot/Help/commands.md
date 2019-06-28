@@ -1,4 +1,5 @@
-﻿**Commands**
+﻿https://i.imgur.com/kJI2lzv.png
+**Commands**
 
 Help - Displays list of commands and bot info. Use right and left reactions to view other pages.
 

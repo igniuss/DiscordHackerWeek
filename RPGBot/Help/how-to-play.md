@@ -1,4 +1,5 @@
-﻿__How to play__
+﻿https://i.imgur.com/kJI2lzv.png
+__How to play__
 
 Welcome to RPG-Bot!
 Battle for the ages, and level your guild to become the strongest in the land

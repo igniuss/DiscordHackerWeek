@@ -108,7 +108,7 @@ namespace RPGBot {
             Log(LogLevel.Info, "Starting Event");
             foreach (var option in GuildOptions) {
                 var channel = option.GetChannel();
-                if(channel == null) { continue; }
+                if (channel == null) { continue; }
                 var quest = new QuestEvent(channel);
 
                 //We don't wanna call this async. Start them all at once
@@ -125,9 +125,9 @@ namespace RPGBot {
                 if (command != null) {
                     try {
                         var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
-                        await Commands.ExecuteCommandAsync(ctx);
+                        Commands.ExecuteCommandAsync(ctx);
                     } catch (System.Exception ex) {
-                        await e.Channel.SendMessageAsync(ex.ToString());
+                        Log(LogLevel.Error, ex.ToString());
                     }
                 }
             }
@@ -180,8 +180,8 @@ namespace RPGBot {
                     }
                 }
             }
-            
-            if(!GuildOptions.Any(x=>x.Id == e.Guild.Id)) {
+
+            if (!GuildOptions.Any(x => x.Id == e.Guild.Id)) {
                 var options = new GuildOption {
                     Id = e.Guild.Id,
                     Channel = e.Guild.GetDefaultChannel().Id
