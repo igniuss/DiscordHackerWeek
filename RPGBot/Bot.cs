@@ -6,7 +6,6 @@ using DSharpPlus.Interactivity;
 using RPGBot.Commands;
 using RPGBot.Models;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,7 +31,6 @@ namespace RPGBot {
             Client = new DiscordClient(new DiscordConfiguration {
                 Token = options.Token,
                 TokenType = TokenType.Bot,
-
                 AutoReconnect = true,
                 ReconnectIndefinitely = true,
                 LogLevel = LogLevel.Info,
@@ -47,6 +45,7 @@ namespace RPGBot {
             Client.GuildAvailable += OnGuildAvailable;
             Client.GuildUnavailable += OnGuildUnavailable;
             Client.Heartbeated += OnHeartbeat;
+            Client.SocketClosed += OnSocketClosed;
 
             #endregion EVENTS
 
@@ -58,7 +57,7 @@ namespace RPGBot {
                 CaseSensitive = false,
                 IgnoreExtraArguments = false,
                 UseDefaultCommandHandler = false,
-                EnableDefaultHelp=false,
+                EnableDefaultHelp = false,
             });
 
             Commands.RegisterCommands<ModeratorCommands>();
@@ -78,11 +77,15 @@ namespace RPGBot {
 
             await Client.ConnectAsync();
 
-            PeriodicEvent = new Timer(TimeSpan.FromHours(1).TotalMilliseconds);
+            PeriodicEvent = new Timer(TimeSpan.FromHours(1f).TotalMilliseconds);
             PeriodicEvent.Elapsed += OnUpdate;
             PeriodicEvent.Start();
             LastEvent = DateTime.Now;
             await Task.Delay(-1);
+        }
+
+        private async Task OnSocketClosed(SocketCloseEventArgs e) {
+            await e.Client.ReconnectAsync(true);
         }
 
         private async Task OnHeartbeat(HeartbeatEventArgs e) {
@@ -93,14 +96,15 @@ namespace RPGBot {
             //get all the other data in here boys
             var serverCount = Bot.Client.Guilds.Count;
             var memberCount = Bot.Client.Guilds.Sum(x => x.Value.MemberCount);
-            var activity = new DiscordActivity($"{timeLeft} until event.\nIn {serverCount} servers with {memberCount} members.", ActivityType.Streaming);
+            var activity = new DiscordActivity($"{Math.Floor(timeLeft.TotalMinutes)}:{timeLeft.Seconds.ToString("##")} until event.\nIn {serverCount} servers with {memberCount} members.", ActivityType.Streaming);
             await Bot.Client.UpdateStatusAsync(activity, UserStatus.Online);
         }
 
         private DateTime LastEvent { get; set; }
-        private async void OnUpdate(object sender, ElapsedEventArgs e) {
+
+        private void OnUpdate(object sender, ElapsedEventArgs e) {
             Log(LogLevel.Info, "Starting Event");
-            foreach(var option in GuildOptions) {
+            foreach (var option in GuildOptions) {
                 var quest = new QuestEvent(option.GetChannel());
 
                 //We don't wanna call this async. Start them all at once
@@ -124,13 +128,12 @@ namespace RPGBot {
                     }
                 }
             }
-
         }
 
         public static string GetPrefix(DiscordGuild guild) {
             if (GuildOptions != null) {
                 var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
-                if(!string.IsNullOrEmpty(prefix)) {
+                if (!string.IsNullOrEmpty(prefix)) {
                     return prefix;
                 }
             }
@@ -139,7 +142,7 @@ namespace RPGBot {
 
         private List<GuildOption> LoadGuildOptions() {
             var options = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
-            if(options == null) {
+            if (options == null) {
                 options = new List<GuildOption>();
                 DB.Insert(GuildOption.DBName, GuildOption.TableName, options);
             }
@@ -151,40 +154,6 @@ namespace RPGBot {
         private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
             Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
             await Task.Delay(1);
-            /*
-            There's a couple permissions we need, specifically
-
-            AddReactions
-            ReadMessageHistory
-            SendMessages
-
-            TODO: If we need more, ADD THEM HERE
-            */
-            var permissions = e.Guild.Permissions.HasValue ? e.Guild.Permissions.Value : 0;
-            if (!permissions.HasPermission(Permissions.AddReactions)
-                || !permissions.HasPermission(Permissions.ReadMessageHistory)
-                || !permissions.HasPermission(Permissions.SendMessages)) {
-                //if any of these fail. We need to report it somehow
-                Log(LogLevel.Warning, $"Missing permissions in {e.Guild.Name}.");
-                //TODO: Make this better I guess 👏
-                var embed = new DiscordEmbedBuilder()
-                    .WithTitle("Error")
-                    .WithDescription($@"Hi there {e.Guild.Owner.Nickname}! 👋, seems like I'm missing some permissions to work properly!
-To operate properly, I need to be able to Send Messages, Add Reactions, and Read Message History, be sure to invite me again with these settings.
-Thanks!
-")
-                    .WithAuthor("RPG-Bot")
-                    .WithColor(DiscordColor.DarkRed);
-
-                try {
-                    _ = await e.Guild.Owner.SendMessageAsync(embed: embed);
-                } catch {
-                    Log(LogLevel.Critical, $"Tried to contact {e.Guild.Owner.Mention} in {e.Guild.Name}");
-                }
-                await e.Guild.LeaveAsync();
-            } else {
-                //TODO: Send instructions to the owner.
-            }
         }
 
         private async Task OnClientErrored(ClientErrorEventArgs e) {
@@ -208,6 +177,17 @@ Thanks!
                     }
                 }
             }
+            
+            if(!GuildOptions.Any(x=>x.Id == e.Guild.Id)) {
+                var options = new GuildOption {
+                    Id = e.Guild.Id,
+                    Channel = e.Guild.GetDefaultChannel().Id
+                };
+
+                DB.Insert(GuildOption.DBName, GuildOption.TableName, options);
+                LoadGuildOptions();
+            }
+
             Log(LogLevel.Info, $"{e.Guild.Name} is now Available");
             await Task.Delay(1);
         }

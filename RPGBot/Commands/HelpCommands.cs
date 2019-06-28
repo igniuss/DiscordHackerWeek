@@ -68,6 +68,7 @@ namespace RPGBot.Commands {
             var msg = await ctx.RespondAsync(embed: embeds[index]);
             foreach (var emoji in emojis) {
                 await msg.CreateReactionAsync(emoji);
+                await Task.Delay(200);
             }
 
             var sw = Stopwatch.StartNew();
@@ -75,12 +76,14 @@ namespace RPGBot.Commands {
                 //fnmod doesn't exist in C# ffs
                 var dirty = false;
                 var cc = await msg.GetReactionsAsync(emojis[0]);
+                await Task.Delay(200);
                 if (cc.Count > 1) {
                     index++;
 
                     dirty = true;
                 } else {
                     cc = await msg.GetReactionsAsync(emojis[1]);
+                    await Task.Delay(200);
                     if (cc.Count > 1) {
                         index--;
                         dirty = true;
@@ -92,6 +95,7 @@ namespace RPGBot.Commands {
                     await msg.ModifyAsync(embed: embeds[index]);
                     foreach (var emoji in emojis) {
                         await msg.CreateReactionAsync(emoji);
+                        await Task.Delay(200);
                     }
                 }
 

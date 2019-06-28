@@ -33,10 +33,8 @@ namespace RPGBot.Commands {
         public async Task RandomDelayMinutes(float min, float max) {
             var r = new Random();
             var t = r.NextDouble();
-            var a = min;
-            var b = max;
 
-            await Task.Delay(TimeSpan.FromMinutes(a + (b - a) * t));
+            await Task.Delay(TimeSpan.FromMinutes(min + ((max - min) * t))); //LERP
         }
 
         public async Task<ConcurrentDictionary<DiscordEmoji, int>> GetReactions(DiscordMessage msg, IEnumerable<DiscordEmoji> emojis, TimeSpan timeout) {
