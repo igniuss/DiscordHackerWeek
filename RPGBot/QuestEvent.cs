@@ -192,7 +192,7 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
             #region SUCCESS
 
             if (CurrentHP > 0) {
-                await Channel.SendMessageAsync($"Event has been completed!\n\nCongratulations to\n{string.Join(",\n", CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.Guild.Id, x)).Select(x => Channel.Users.First(y=>y.Id == x.Id).Username))}");
+                await Channel.SendMessageAsync($"Event has been completed!\n\nCongratulations to\n{string.Join(",\n", CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.Guild.Id, x)).Select(x => Channel.Users.First(y => y.Id == x.Id).Username))}");
                 await Task.Delay(500);
                 foreach (var player in CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.Guild.Id, x))) {
                     player.SuccessfulQuests++;
@@ -304,7 +304,20 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     }
                     foreach (var fledPlayer in fledPlayers) {
                         actionQueue.TryRemove(fledPlayer, out _);
-                        CurrentPlayers[fledPlayer.character].Remove(fledPlayer.Id);
+                        if (CurrentPlayers.ContainsKey(fledPlayer.character)) {
+                            CurrentPlayers[fledPlayer.character].Remove(fledPlayer.Id);
+                        } else {
+                            Console.WriteLine("For some reason the character wasn't in there??!!");
+                            //bruteforce
+                            foreach (var kv in CurrentPlayers) {
+                                if (kv.Value.Contains(fledPlayer.Id)) {
+                                    kv.Value.DefaultIfEmpty(fledPlayer.Id);
+                                    Console.WriteLine($"Found player in {kv.Key.GetType().Name}");
+                                    break;
+                                }
+                            }
+                        }
+
                         CurrentHP -= fledPlayer.GetHP();
                         MaxHP -= fledPlayer.GetHP();
 
