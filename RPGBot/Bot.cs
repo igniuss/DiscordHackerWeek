@@ -23,6 +23,7 @@ namespace RPGBot {
         public Timer PeriodicEvent { get; private set; }
 
         public static List<GuildOption> GuildOptions;
+        public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
         public Bot() {
             GuildOptions = LoadGuildOptions();
         }

@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using RPGBot.Models;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 namespace RPGBot.Commands {
 
     public class RPGCommands : BaseCommandModule {
+        
 
         public static async Task<string> GetURL(string path) {
             var msg = await Bot.ImageCache.SendFileAsync(path);
@@ -30,36 +32,42 @@ namespace RPGBot.Commands {
 
         [Command("setchannel")]
         public async Task SetChannel(CommandContext ctx, DiscordChannel channel = null) {
-            if (channel == null) {
-                channel = ctx.Channel;
-            }
-            if (channel.Type == DSharpPlus.ChannelType.Text) {
-                var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
-                if (guild == null) {
-                    guild = new GuildOption { Id = ctx.Guild.Id };
+            if (ctx.Member.PermissionsIn(ctx.Channel).HasPermission(Permissions.Administrator)) {
+                if (channel == null) {
+                    channel = ctx.Channel;
                 }
-                guild.Channel = channel.Id;
-                try {
-                    DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
-                    Bot.GuildOptions = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
-                    await ctx.RespondAsync($"👌 New default channel is now {guild.GetChannel()}");
-                } catch (System.Exception ex) {
-                    Console.WriteLine(ex);
+                if (channel.Type == DSharpPlus.ChannelType.Text) {
+                    var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
+                    if (guild == null) {
+                        guild = new GuildOption { Id = ctx.Guild.Id };
+                    }
+                    guild.Channel = channel.Id;
+                    try {
+                        DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
+                        Bot.GuildOptions = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
+                        await ctx.RespondAsync($"👌 New default channel is now {guild.GetChannel()}");
+                    } catch (System.Exception ex) {
+                        Console.WriteLine(ex);
+                    }
                 }
+            } else {
+                await ctx.RespondAsync("This command can only be used by server admins.");
             }
         }
         [Command("event")]
         public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
-            var guilds = ctx.Client.Guilds.Values.ToList();
-            if (onlyHere) {
-                guilds = new List<DiscordGuild> {
+            if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
+                var guilds = ctx.Client.Guilds.Values.ToList();
+                if (onlyHere) {
+                    guilds = new List<DiscordGuild> {
                     ctx.Guild
                 };
+                }
+                foreach (var guild in guilds) {
+                    _ = Mission(guild);
+                }
+                await ctx.RespondAsync($"Executing on {string.Join(", ", guilds.Select(x => x.Name))}");
             }
-            foreach (var guild in guilds) {
-                _ = Mission(guild);
-            }
-            await ctx.RespondAsync($"Executing on {string.Join(", ", guilds.Select(x => x.Name))}");
         }
 
         [Command("shop")]
@@ -95,25 +103,6 @@ namespace RPGBot.Commands {
                 player.Items.Add(item);
             }
             player.Update();
-        }
-
-        [Command("inventory")]
-        [Description("View the items you are currently holding.")]
-        public async Task Inventory(CommandContext ctx) {
-            var player = Player.GetPlayer(ctx.Guild.Id, ctx.Member.Id);
-            var output = "";
-            var itemTypes = Items.ItemBase.GetAllItems();
-            foreach(var t in itemTypes) {
-                var quantity = player.Items.Where(item => item.GetType() == t.GetType()).Count();
-                output += $"{t.GetEmoji()} {t.Name}: {quantity}\n";
-            }
-            var embed = new DiscordEmbedBuilder()
-                .WithTitle("Your Inventory")
-                .WithAuthor(ctx.Member.DisplayName, iconUrl: ctx.Member.AvatarUrl)
-                .WithDescription(output)
-                .WithColor(DiscordColor.Blue);
-               
-            await ctx.RespondAsync(embed: embed);
         }
     }
 }
