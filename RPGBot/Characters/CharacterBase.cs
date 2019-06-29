@@ -10,6 +10,7 @@ namespace RPGBot.Characters {
     public abstract class CharacterBase {
         public abstract int Id { get; }
         public abstract float AttackPowerMultiplier { get; }
+        public abstract float DefenseMultiplier { get; }
         public abstract float HealthMultiplier { get; }
         public abstract float GoldMultiplier { get; }
         public abstract DiscordEmoji GetEmoji();

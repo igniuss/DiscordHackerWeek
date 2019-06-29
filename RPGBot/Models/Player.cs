@@ -79,7 +79,7 @@ namespace RPGBot.Models {
         public float GetHP() {
             if (character == null) { return 0f; }
             var lvl = GetCurrentLevel();
-            var _base = 100;
+            var _base = 120;
 
             return lvl * _base * character.HealthMultiplier * ((CurrentMercenaries + 1) * 0.5f);
         }
@@ -89,7 +89,7 @@ namespace RPGBot.Models {
             var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
-            var crit = random.Next(1, 6) * 0.75f;
+            var crit = random.Range(1, 6) * 0.75f;
 
             return lvl * _base * character.AttackPowerMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
         }
@@ -99,8 +99,8 @@ namespace RPGBot.Models {
             var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
-            var crit = random.Next(1, 6) * 0.75f;
-            return lvl * _base * character.HealthMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
+            var crit = random.Range(1, 6) * 0.75f;
+            return lvl * _base * character.DefenseMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
         }
 
         public void IncreaseGold(float gold) {
