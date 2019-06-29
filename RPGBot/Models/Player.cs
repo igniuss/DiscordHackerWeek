@@ -133,8 +133,10 @@ namespace RPGBot.Models {
             EnemiesKilled++;
             IncreaseGold(goldReceived);
             IncreaseExperience(expeReceived);
-            var newMercCount = Math.Max(0, random.Next(1, CurrentMercenaries));
-            CurrentMercenaries = newMercCount;
+            if (CurrentMercenaries > 0) {
+                var newMercCount = CurrentMercenaries == 1 ? 0 : Math.Max(0, random.Next(1, CurrentMercenaries));
+                CurrentMercenaries = newMercCount;
+            }
         }
     }
 }

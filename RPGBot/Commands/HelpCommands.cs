@@ -76,14 +76,14 @@ namespace RPGBot.Commands {
                 //fnmod doesn't exist in C# ffs
                 var dirty = false;
                 var cc = await msg.GetReactionsAsync(emojis[0]);
-                await Task.Delay(200);
+                await Task.Delay(500);
                 if (cc.Count > 1) {
                     index--;
 
                     dirty = true;
                 } else {
                     cc = await msg.GetReactionsAsync(emojis[1]);
-                    await Task.Delay(200);
+                    await Task.Delay(500);
                     if (cc.Count > 1) {
                         index++;
                         dirty = true;

@@ -269,6 +269,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                     async Task handler(DSharpPlus.EventArgs.MessageReactionAddEventArgs e) {
                         //only check our own msg
                         if (e.Message.Id == msg.Id) {
+                            await Task.Delay(500);
                             //only check actions we predefined
                             var action = actions.First(x => x.GetEmoji() == e.Emoji);
                             if (action != null) {
@@ -281,7 +282,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                                 }
                             }
                         }
-                        await Task.Delay(0);
+                        await Task.Delay(500);
                         return;
                     }
 
@@ -387,7 +388,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
 
                     #endregion CALCULATE
 
-                    await Task.Delay(100);
+                    await Task.Delay(500);
                 }
 
                 #region PLAYER VICTORY
