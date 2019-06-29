@@ -1,12 +1,3 @@
-﻿# Discord Hacker Week Bot
-
-This is the submition of 
-Igniuss#6852 and Jeff#4243 
-
-for the Discord Hacker Week :clap: :clap:
-
-# Instructions
-
 ![logo](https://i.imgur.com/kJI2lzv.png)
 # __How to play__
 
@@ -72,3 +63,11 @@ You've guessed it, you can check our __***[Github](https://github.com/igniuss/Di
 Join our [Discord](https://discord.gg/VMBn2yV) if you want to learn about the development!
 
 Want to add this bot to the server? You can [Totally do that!](https://discordapp.com/oauth2/authorize?client_id=591408341608038400&scope=bot&permissions=355392)
+
+
+# Discord Hacker Week Bot
+
+This is the submition of 
+Igniuss#6852 and Jeff#4243 
+
+for the Discord Hacker Week of June 2019
