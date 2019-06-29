@@ -62,8 +62,9 @@ You've guessed it, you can check our __***[Github](https://github.com/igniuss/Di
 
 Join our [Discord](https://discord.gg/VMBn2yV) if you want to learn about the development!
 
-Want to add this bot to the server? You can [Totally do that!](https://discordapp.com/oauth2/authorize?client_id=591408341608038400&scope=bot&permissions=355392)
+Want to add this bot to the server? You can [Totally do that!](https://discordbots.org/bot/591408341608038400)
 
+Don't forget to vote for us on [DiscordBots.org!](https://discordbots.org/bot/591408341608038400) if you like what we're doing!
 
 # Discord Hacker Week Bot
 
