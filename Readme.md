@@ -1,7 +1,9 @@
 ![logo](https://i.imgur.com/kJI2lzv.png)
 
-![status-badge](https://discordbots.org/api/widget/status/591408341608038400.png)
-![votes-badge](https://discordbots.org/api/widget/upvotes/591408341608038400.png?noavatar=true)
+[![status-badge](https://discordbots.org/api/widget/status/591408341608038400.png)](https://discordbots.org/bot/591408341608038400)
+[![votes-badge](https://discordbots.org/api/widget/upvotes/591408341608038400.png?noavatar=true)](https://discordbots.org/bot/591408341608038400)
+[![Discord Chat](https://img.shields.io/discord/593886288046718976.svg)](https://discord.gg/VMBn2yV)  
+
 # __How to play__
 
 Welcome to RPG-Bot!
