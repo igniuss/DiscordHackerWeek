@@ -1,4 +1,7 @@
 ![logo](https://i.imgur.com/kJI2lzv.png)
+
+![status-badge](https://discordbots.org/api/widget/status/591408341608038400.png)
+![votes-badge](https://discordbots.org/api/widget/upvotes/591408341608038400.png?noavatar=true)
 # __How to play__
 
 Welcome to RPG-Bot!
