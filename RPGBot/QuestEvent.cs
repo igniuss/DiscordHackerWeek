@@ -2,6 +2,7 @@
 using RPGBot.Characters;
 using RPGBot.Generative;
 using RPGBot.Models;
+using RPGBot.Helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -222,7 +223,7 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
 
                 var enemyLevel = level;
 
-                var maxEnemyHP = enemyLevel * 100f;
+                var maxEnemyHP = enemyLevel * 50f;
                 var currentEnemyHP = maxEnemyHP;
                 var enemyName = NamesGenerator.GetResult();
 
@@ -346,8 +347,8 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                         }
                     }
 
-                    currentEnemyHP -= damageDealt;
-                    var enemyDamage = enemyLevel * 5f * (random.Next(1, 6) * 0.75f);
+                    currentEnemyHP -= damageDealt; 
+                    var enemyDamage = enemyLevel * 5f * (random.Range(1, 6) * 0.5f);
                     damageReceived += enemyDamage;
                     if (damageReceived > damageBlocked) {
                         CurrentHP -= damageReceived - damageBlocked;

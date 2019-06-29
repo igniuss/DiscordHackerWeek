@@ -67,51 +67,51 @@ namespace RPGBot.Models {
         }
 
         public ulong GetCurrentExp() {
-            return this.character == null ? 0 : Experience.GetSafe<ulong>(this.character.Id, 0);
+            return character == null ? 0 : Experience.GetSafe<ulong>(character.Id, 0);
         }
 
         public int GetCurrentLevel() {
-            if (this.character == null) { return 0; }
+            if (character == null) { return 0; }
             var exp = GetCurrentExp();
             return CalculateLevel(exp);
         }
 
         public float GetHP() {
-            if (this.character == null) { return 0f; }
+            if (character == null) { return 0f; }
             var lvl = GetCurrentLevel();
             var _base = 100;
 
-            return lvl * _base * this.character.HealthMultiplier * ((CurrentMercenaries + 1) * 0.5f);
+            return lvl * _base * character.HealthMultiplier * ((CurrentMercenaries + 1) * 0.5f);
         }
 
         public float GetAttack() {
-            if (this.character == null) { return 0f; }
+            if (character == null) { return 0f; }
             var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = random.Next(1, 6) * 0.75f;
 
-            return lvl * _base * this.character.AttackPowerMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
+            return lvl * _base * character.AttackPowerMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
         }
 
         public float GetDefense() {
-            if (this.character == null) { return 0f; }
+            if (character == null) { return 0f; }
             var random = new Random();
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = random.Next(1, 6) * 0.75f;
-            return lvl * _base * this.character.HealthMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
+            return lvl * _base * character.HealthMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
         }
 
         public void IncreaseGold(float gold) {
-            if (this.character == null) { return; }
-            Gold += (ulong)Math.Ceiling(gold * this.character.GoldMultiplier);
+            if (character == null) { return; }
+            Gold += (ulong)Math.Ceiling(gold * character.GoldMultiplier);
         }
 
         public void IncreaseExperience(long exp) {
-            if (this.character == null) { return; }
+            if (character == null) { return; }
             if (Experience == null) { Experience = new ulong[0]; }
-            if (Experience.Length <= this.character.Id) {
+            if (Experience.Length <= character.Id) {
                 var characters = CharacterBase.GetAllCharacters();
                 var newExp = new ulong[characters.Count()];
                 for (var i = 0; i < Experience.Length; i++) {
@@ -119,7 +119,7 @@ namespace RPGBot.Models {
                 }
                 Experience = newExp;
             }
-            Experience[this.character.Id] = (ulong)Math.Max(0, (long)Experience[this.character.Id] + exp);
+            Experience[character.Id] = (ulong)Math.Max(0, (long)Experience[character.Id] + exp);
         }
 
         internal void Death(long deathExp) {

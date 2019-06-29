@@ -35,6 +35,23 @@ namespace RPGBot.Commands {
             }
         }
 
+        [Command("bot-stats")]
+        public async Task GetStats(CommandContext ctx) {
+            if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
+                var guilds = Bot.Client.Guilds.Values;
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"Currently in {guilds.Count()} guilds.");
+                foreach (var guild in guilds) {
+                    sb.AppendLine($"> {guild.Name} - {guild.Owner.DisplayName}  [{guild.MemberCount}]");
+                }
+                var embed = new DiscordEmbedBuilder()
+                    .WithTitle("Stats")
+                    .WithTimestamp(System.DateTime.Now)
+                    .WithDescription(sb.ToString());
+
+                await ctx.RespondAsync(embed: embed);
+            }
+        }
         [Command("event")]
         public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
             if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
@@ -47,7 +64,7 @@ namespace RPGBot.Commands {
                     quest.StartQuest();
                 }
 
-                await ctx.RespondAsync($"Executing on {string.Join("\n", Bot.GuildOptions.Select(x => x.GetChannel().Guild.Name))}");
+                await ctx.RespondAsync($"Executing on {string.Join("\n", channels.Select(x=> $"{x.Guild.Name} - {x.Name}"))}");
             }
         }
 

@@ -76,10 +76,6 @@ namespace RPGBot {
 
             await Client.ConnectAsync();
 
-            //PeriodicEvent = new Timer(TimeSpan.FromHours(1f).TotalMilliseconds);
-            //PeriodicEvent.Elapsed += OnUpdate;
-            //PeriodicEvent.Start();
-
             while (true) {
                 var now = DateTime.Now;
                 var minutes = now.Minute;
@@ -87,7 +83,6 @@ namespace RPGBot {
                 await Task.Delay(TimeSpan.FromMinutes(left));
                 OnUpdate(null, null);
             }
-            await Task.Delay(-1);
         }
 
         private async Task OnGuildCreated(GuildCreateEventArgs e) {
@@ -124,6 +119,7 @@ namespace RPGBot {
 
         private async Task OnMessageCreated(MessageCreateEventArgs e) {
             if (e.Author.IsBot) { return; }
+            await Task.Delay(10);
             var prefix = GetPrefix(e.Guild);
             if (e.Message.Content.StartsWith(prefix)) {
                 var cmdText = e.Message.Content.Substring(prefix.Length);
