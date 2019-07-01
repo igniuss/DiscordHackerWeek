@@ -31,17 +31,16 @@ namespace RPGBot {
 
         #region Public Properties
 
+        public TimeSpan CompletedTime {
+            get {
+                return Timer.Elapsed;
+            }
+        }
+
         public string BackgroundPath { get; private set; }
         public string BackgroundUrl { get; private set; }
         public string Boss { get; }
         public DiscordChannel Channel { get; private set; }
-
-        public TimeSpan CompletedTime {
-            get {
-                return TimeSpan.FromMinutes(random.Range(5f, 500f));
-            }
-        }
-
         public float CurrentHP { get; private set; }
         public int EncounterCount { get; private set; }
         public int EncounterIndex { get; private set; }
@@ -73,11 +72,6 @@ namespace RPGBot {
 
         #region Public Methods
 
-        //public TimeSpan CompletedTime {
-        //    get {
-        //        return Timer.Elapsed;
-        //    }
-        //}
         public async Task<Quest> Start() {
             Timer = System.Diagnostics.Stopwatch.StartNew();
             //Send 'Starting Quest'
