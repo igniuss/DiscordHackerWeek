@@ -1,5 +1,4 @@
-﻿using DSharpPlus.Entities;
-using RPGBot.Characters;
+﻿using RPGBot.Characters;
 using RPGBot.Helpers;
 using RPGBot.Items;
 using System;
@@ -35,14 +34,20 @@ namespace RPGBot.Models {
 
         //public CharacterBase character { get; set; }
         public int characterId { get; set; }
+
+        public DateTime LastVoted { get; set; }
+        public ulong VoteStreak { get; set; }
+
         //public DiscordUser discordUser;
 
-        public Player() { }
+        public Player() {
+        }
 
         public static IEnumerable<Player> GetPlayers(ulong guildId, IEnumerable<ulong> Ids) {
             var players = DB.Find<Player>($"{guildId}.db", "players", x => Ids.Contains(x.Id));
             return players;
         }
+
         public static Player GetPlayer(ulong guildId, ulong id) {
             var player = DB.FindOne<Player>($"{guildId}.db", "players", x => x.Id == id);
             if (player == null) {
@@ -112,9 +117,10 @@ namespace RPGBot.Models {
         }
 
         public void AddGold(ulong gold) {
+            float mult = 1;
             var character = CharacterBase.GetCharacter(characterId);
-            if (character == null) { return; }
-            Gold += (ulong)Math.Ceiling(gold * character.GoldMultiplier);
+            if(character != null) { mult = character.GoldMultiplier; }
+            Gold += (ulong)Math.Ceiling(gold * mult);
         }
 
         public void AddExperience(long exp) {

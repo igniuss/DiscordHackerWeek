@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using DiscordBotsList.Api;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -18,6 +19,7 @@ namespace RPGBot {
 
         public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
         public static List<GuildOption> GuildOptions;
+        public static AuthDiscordBotListApi BotlistAPI { get; private set; }
 
         #endregion Public Fields
 
@@ -78,6 +80,7 @@ namespace RPGBot {
             Commands.RegisterCommands<ModeratorCommands>();
             Commands.RegisterCommands<RPGCommands>();
             Commands.RegisterCommands<HelpCommands>();
+            Commands.RegisterCommands<BotlistCommands>();
 
             Interactivty = Client.UseInteractivity(new InteractivityConfiguration {
                 PaginationBehaviour = DSharpPlus.Interactivity.Enums.PaginationBehaviour.Default,
@@ -89,6 +92,10 @@ namespace RPGBot {
             #endregion Commands
 
             await Client.ConnectAsync();
+
+            if (!string.IsNullOrEmpty(options.DiscordbotToken)) {
+                BotlistAPI = new AuthDiscordBotListApi(Client.CurrentUser.Id, options.DiscordbotToken);
+            }
 
             await Task.Delay(-1);
             while (true) {
@@ -249,6 +256,7 @@ namespace RPGBot {
 
         private async Task OnClientReady(ReadyEventArgs e) {
             Log(LogLevel.Info, "Client Ready");
+
             await Task.Delay(1);
         }
 
