@@ -34,7 +34,7 @@ namespace RPGBot {
         #region Public Constructors
 
         public Bot() {
-            GuildOptions = LoadGuildOptions();
+            UpdateGuildOptions();
         }
 
         #endregion Public Constructors
@@ -112,7 +112,7 @@ namespace RPGBot {
 
         #endregion Private Fields
 
-        #region Static Helpers
+        #region Public Static Methods
 
         public static DiscordEmbedBuilder GetDefaultEmbed() {
             var embed = new DiscordEmbedBuilder()
@@ -204,11 +204,15 @@ namespace RPGBot {
             await PostLeaderboards(quests);
         }
 
-        #endregion Static Helpers
+        public static void UpdateGuildOptions() {
+            GuildOptions = LoadGuildOptions();
+        }
+
+        #endregion Public Static Methods
 
         #region Private Methods
 
-        private List<GuildOption> LoadGuildOptions() {
+        private static List<GuildOption> LoadGuildOptions() {
             var options = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
             if (options == null) {
                 options = new List<GuildOption>();

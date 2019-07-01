@@ -72,7 +72,9 @@ namespace RPGBot.Generative {
         }
 
         public string CreateImage(string charPath, string backPath) {
-            var path = Path.Combine("Output", $"{charPath}_{backPath}.png");
+            var charName = Path.GetFileNameWithoutExtension(charPath);
+            var backName = Path.GetFileNameWithoutExtension(backPath);
+            var path = Path.Combine("Output", $"{charName}_{backName}.png");
             if (File.Exists(path)) { return path; }
             var info = new FileInfo(path);
             if (!info.Directory.Exists) {
@@ -110,14 +112,18 @@ namespace RPGBot.Generative {
         }
 
         public string SimulateDamage(string path, float percentage) {
+            var newPath = $"{path}_{percentage.ToString("0.00")}.png";
+            if (File.Exists(newPath)) {
+                return newPath;
+            }
             using (var img = Image.Load(path)) {
                 var options = new GraphicsOptions() {
                     BlendPercentage = percentage,
                 };
                 img.Mutate(x => x.Vignette(options, Rgba32.DarkRed));
-                var randomPath = Path.Combine("Output", $"{Guid.NewGuid()}.png");
-                img.Save(randomPath);
-                return randomPath;
+                var savePath = newPath;
+                img.Save(savePath);
+                return savePath;
             }
         }
     }

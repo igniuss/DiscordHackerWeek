@@ -7,6 +7,7 @@ using RPGBot.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -295,10 +296,7 @@ namespace RPGBot {
                             var player = Player.GetPlayer(Channel.GuildId, id);
                             player.AddExperience(exp);
                             player.AddGold(gold);
-
                             MaxHP -= player.GetHP();
-                            player.CurrentMercenaries = 0;
-                            //save changes
                             player.Update();
                         }
 
@@ -351,16 +349,27 @@ namespace RPGBot {
 
         private async Task<string> GetImageURL(string enemy, string background, float HPPercentage) {
             var percentage = 1f - HPPercentage;
+            var rounded = (float)Math.Round(percentage * 4f) / 4f; //Round this to 1/4ths, we don't need more precision than this.
 
-            var rounded = (float)Math.Round(percentage * 4f) / 4f;// 0f; //we should round HP to 1, 0.75, 0.5, 0.25, and 0
             var damagePath = ImgGenerator.SimulateDamage(ImgGenerator.CreateImage(enemy, background), rounded);
-            var name = $"{enemy}/{background}/{rounded.ToString("0.0")}";
-            if (CachedImages.TryGetValue(name, out var url)) {
-                return url;
+            var enemyName = Path.GetFileNameWithoutExtension(enemy);
+            var backgroundName = Path.GetFileNameWithoutExtension(background);
+            var cacheName = $"{enemyName}_{backgroundName}_{rounded.ToString("0.00")}.cache";
+
+            var cachedInfo = new FileInfo(Path.Combine("Cache", cacheName));
+            if (!cachedInfo.Directory.Exists) {
+                cachedInfo.Directory.Create();
             }
+            if (cachedInfo.Exists) {
+                using (var read = cachedInfo.OpenText()) {
+                    return read.ReadToEnd();
+                }
+            }
+
             var msg = await Bot.ImageCache.SendFileAsync(damagePath);
-            url = msg.Attachments.First().Url;
-            CachedImages.TryAdd(name, url);
+            var url = msg.Attachments.First().Url;
+
+            File.WriteAllText(cachedInfo.FullName, url);
             return url;
         }
 

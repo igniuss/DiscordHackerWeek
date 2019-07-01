@@ -2,7 +2,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using RPGBot.Helpers;
 using RPGBot.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,8 +26,8 @@ namespace RPGBot.Commands {
                     if (guild == null) { guild = new GuildOption { Id = ctx.Guild.Id }; }
 
                     guild.Prefix = prefix;
-                    Bot.GuildOptions.Add(guild);
                     DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
+                    Bot.UpdateGuildOptions();
                 }
                 await ctx.RespondAsync($"New prefix is now `{Bot.GetPrefix(ctx.Guild)}` 👌");
             } else {
@@ -50,8 +49,8 @@ namespace RPGBot.Commands {
                     if (guild == null) { guild = new GuildOption { Id = ctx.Guild.Id }; }
 
                     guild.RoleId = role.Id;
-                    Bot.GuildOptions.Add(guild);
                     DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
+                    Bot.UpdateGuildOptions();
                     await ctx.RespondAsync($"New role is now @{role.Name} 👌\nMake sure the bot can ping this role.");
                 } else {
                     await ctx.RespondAsync($"Removed role 👌");

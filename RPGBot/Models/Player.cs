@@ -87,7 +87,8 @@ namespace RPGBot.Models {
             if (character == null) { return 0f; }
             var lvl = GetCurrentLevel();
             var _base = 120;
-            return lvl * _base * character.HealthMultiplier * ((CurrentMercenaries + 1) * 0.5f);
+            var mercenaryBonus = _base * 2 * CurrentMercenaries;
+            return (lvl * _base * character.HealthMultiplier) + mercenaryBonus;
         }
 
         public float GetAttack() {
@@ -96,8 +97,8 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = this.random.Range(1f, 6f) * 0.75f;
-
-            return lvl * _base * character.AttackPowerMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
+            var mercenaryBonus = _base * 2 * CurrentMercenaries;
+            return (lvl * _base * character.AttackPowerMultiplier * crit) + mercenaryBonus;
         }
 
         public float GetDefense() {
@@ -106,7 +107,8 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = this.random.Range(1f, 6f) * 0.75f;
-            return lvl * _base * character.DefenseMultiplier * crit * ((CurrentMercenaries + 1) * 0.5f);
+            var mercenaryBonus = _base * 2 * CurrentMercenaries;
+            return (lvl * _base * character.DefenseMultiplier * crit) + mercenaryBonus;
         }
 
         public void AddGold(ulong gold) {
