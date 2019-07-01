@@ -159,11 +159,10 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                 if (random.NextDouble() > 0.5) {
                     backdrop = ImageGenerator.RandomBackground();
                 }
-                var totalExp = CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.GuildId, x)).Sum(x => (long)x.GetCurrentExp());
-                var totalLevel = Player.CalculateLevel((ulong)totalExp);
+                var totalLevel = CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.GuildId, x)).Sum(x => x.GetCurrentLevel());
 
                 //level between current-5 & current+2
-                var enemyLevel = Math.Max(random.Next(totalLevel - 3, totalLevel + 3), 1);
+                var enemyLevel = (int)Math.Round(Math.Max(random.Range(totalLevel * 0.75f, totalLevel * 3.0f), 1));
 
                 await Ecounter(enemy, backdrop, embed, enemyLevel);
                 if (CurrentHP <= 0f) { break; }
@@ -191,10 +190,9 @@ CurrentPlayers.Select(x => $"{x.Key.GetType().Name} {x.Key.GetEmoji()} - {x.Valu
                 var enemy = ImageGenerator.RandomCharacter(true);
                 backdrop = ImageGenerator.RandomBackground();
 
-                var totalExp = CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.GuildId, x)).Sum(x => (long)x.GetCurrentExp());
-                var totalLevel = Player.CalculateLevel((ulong)totalExp);
+                var totalLevel = CurrentPlayers.Values.SelectMany(x => x).Select(x => Player.GetPlayer(Channel.GuildId, x)).Sum(x => x.GetCurrentLevel());
 
-                var enemyLevel = Math.Max(random.Next(totalLevel - 2, totalLevel + 20), 1);
+                var enemyLevel =(int) Math.Round(Math.Max(random.Range(totalLevel * 0.9f, totalLevel * 20f), 1));
                 await Ecounter(enemy, backdrop, embed, enemyLevel);
             }
 
@@ -348,7 +346,7 @@ Damage Taken : {Math.Max(0, damageReceived - damageBlocked)}
                         }
                     }
 
-                    currentEnemyHP -= damageDealt; 
+                    currentEnemyHP -= damageDealt;
                     var enemyDamage = enemyLevel * 5f * (random.Range(1, 6) * 0.5f);
                     damageReceived += enemyDamage;
                     if (damageReceived > damageBlocked) {

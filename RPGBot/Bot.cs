@@ -142,6 +142,9 @@ namespace RPGBot {
                     return prefix;
                 }
             }
+#if DEBUG
+            return "xx";
+#endif
             return "!!";
         }
 
@@ -154,7 +157,7 @@ namespace RPGBot {
             return options;
         }
 
-        #region Event Callbacks
+#region Event Callbacks
 
         private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
             Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
@@ -197,7 +200,7 @@ namespace RPGBot {
             await Task.Delay(1);
         }
 
-        #endregion Event Callbacks
+#endregion Event Callbacks
 
         private void Log(LogLevel level, string msg) {
             Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);
