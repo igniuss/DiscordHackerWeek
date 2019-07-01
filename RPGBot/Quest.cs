@@ -186,7 +186,7 @@ namespace RPGBot {
 
         private async Task<IEnumerable<ulong>> Encounter(string enemyPath, int enemyLevel) {
             try {
-                var url = await GetImageURL(enemyPath, BackgroundPath);
+                var url = await GetImageURL(enemyPath, BackgroundPath, CurrentHP / MaxHP);
                 var currentUserIds = UserIds.ToList();
 
                 var maxHPEnemy = enemyLevel * 50 * random.Range(0.8f, 1.5f);
@@ -349,14 +349,18 @@ namespace RPGBot {
             }
         }
 
-        private async Task<string> GetImageURL(string enemy, string background) {
-            var path = ImgGenerator.CreateImage(enemy, background);
-            if (CachedImages.TryGetValue(path, out var url)) {
+        private async Task<string> GetImageURL(string enemy, string background, float HPPercentage) {
+            var percentage = 1f - HPPercentage;
+
+            var rounded = (float)Math.Round(percentage * 4f) / 4f;// 0f; //we should round HP to 1, 0.75, 0.5, 0.25, and 0
+            var damagePath = ImgGenerator.SimulateDamage(ImgGenerator.CreateImage(enemy, background), rounded);
+            var name = $"{enemy}/{background}/{rounded.ToString("0.0")}";
+            if (CachedImages.TryGetValue(name, out var url)) {
                 return url;
             }
-            var msg = await Bot.ImageCache.SendFileAsync(path);
+            var msg = await Bot.ImageCache.SendFileAsync(damagePath);
             url = msg.Attachments.First().Url;
-            CachedImages.TryAdd(path, url);
+            CachedImages.TryAdd(name, url);
             return url;
         }
 
@@ -372,7 +376,7 @@ namespace RPGBot {
         }
 
         private async Task<DiscordMessage> PostStartMessage() {
-            BackgroundUrl = await GetImageURL(null, BackgroundPath);
+            BackgroundUrl = await GetImageURL(null, BackgroundPath, 1f);
             var embed = Bot.GetDefaultEmbed()
                 .WithImageUrl(BackgroundUrl)
                 .AddField("Quest", QuestName);

@@ -65,14 +65,16 @@ namespace RPGBot.Generative {
                     }
                 }
                 img.Frames.RemoveFrame(0);
-                
+
                 img.Save(randomPath);
                 return randomPath;
             }
         }
+
         public string CreateImage(string charPath, string backPath) {
-            var randomPath = Path.Combine("Output", $"{Guid.NewGuid()}.png");
-            var info = new FileInfo(randomPath);
+            var path = Path.Combine("Output", $"{charPath}_{backPath}.png");
+            if (File.Exists(path)) { return path; }
+            var info = new FileInfo(path);
             if (!info.Directory.Exists) {
                 info.Directory.Create();
             }
@@ -102,8 +104,8 @@ namespace RPGBot.Generative {
                         img.Mutate(x => x.DrawImage(cImg, point, 1));
                     }
                 }
-                img.Save(randomPath);
-                return randomPath;
+                img.Save(path);
+                return path;
             }
         }
 
