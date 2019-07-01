@@ -12,6 +12,7 @@ namespace RPGBot.Models {
         public ulong Id { get; set; }
         public string Prefix { get; set; }
         public ulong Channel { get; set; }
+        public ulong RoleId { get; set; }
         private DiscordChannel channel;
         public DiscordChannel GetChannel() {
             if (Bot.Client.Guilds.Any(x => x.Key == Id)) {

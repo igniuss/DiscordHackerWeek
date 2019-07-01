@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using RPGBot.Helpers;
 using RPGBot.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,29 @@ namespace RPGBot.Commands {
             }
         }
 
+        [Command("role")]
+        [Description("Set the role to on events")]
+        public async Task SetRole(CommandContext ctx, DiscordRole role) {
+            // allow admins or bot owners to change the prefix
+            if (ctx.Member.PermissionsIn(ctx.Channel).HasPermission(Permissions.Administrator) || Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
+                if (Bot.GuildOptions == null) {
+                    await ctx.RespondAsync("[ERROR] Bot.Prefixes is Empty; Contact an administrator with this error.");
+                    return;
+                }
+                if (role != null) {
+                    var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
+                    if (guild == null) { guild = new GuildOption { Id = ctx.Guild.Id }; }
+
+                    guild.RoleId = role.Id;
+                    Bot.GuildOptions.Add(guild);
+                    DB.Upsert(GuildOption.DBName, GuildOption.TableName, guild);
+                    await ctx.RespondAsync($"New role is now @{role.Name} 👌\nMake sure the bot can ping this role.");
+                } else {
+                    await ctx.RespondAsync($"Removed role 👌");
+                }
+            }
+        }
+
         [Command("bot-stats")]
         public async Task GetStats(CommandContext ctx) {
             if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
@@ -52,19 +76,16 @@ namespace RPGBot.Commands {
                 await ctx.RespondAsync(embed: embed);
             }
         }
+
         [Command("event")]
-        public async Task RunEvent(CommandContext ctx, bool onlyHere = false) {
+        public async Task RunEvent(CommandContext ctx, int enemyCount = 1, bool onlyHere = true) {
             if (Bot.BotOwnerIds.Contains(ctx.Member.Id)) {
+                await ctx.Message.DeleteAsync();
                 var channels = Bot.GuildOptions.Select(x => x.GetChannel());
                 if (onlyHere) {
                     channels = new List<DiscordChannel>() { ctx.Channel };
                 }
-                foreach (var channel in channels) {
-                    var quest = new QuestEvent(channel);
-                    quest.StartQuest();
-                }
-
-                await ctx.RespondAsync($"Executing on {string.Join("\n", channels.Select(x=> $"{x.Guild.Name} - {x.Name}"))}");
+                await Bot.StartEvents(channels, enemyCount);
             }
         }
 

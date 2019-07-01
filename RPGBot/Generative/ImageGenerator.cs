@@ -9,19 +9,13 @@ using System.IO;
 namespace RPGBot.Generative {
 
     public class ImageGenerator {
-        private const string CharacterPath = "Assets/Characters/";
-        private const string BossPath = "Assets/Boss/";
         private const string BackgroundPath = "Assets/Backgrounds/";
         private const string MiscPath = "Assets/Misc/";
 
-        private DirectoryInfo CharacterDir { get; set; }
-        private DirectoryInfo BossDir { get; set; }
         private DirectoryInfo BackgroundDir { get; set; }
         private DirectoryInfo MiscDir { get; set; }
 
         public ImageGenerator() {
-            CharacterDir = new DirectoryInfo(CharacterPath);
-            BossDir = new DirectoryInfo(BossPath);
             BackgroundDir = new DirectoryInfo(BackgroundPath);
             MiscDir = new DirectoryInfo(MiscPath);
         }
@@ -29,27 +23,6 @@ namespace RPGBot.Generative {
         public string RandomBackground() {
             var background = BackgroundDir.GetFiles("*.png").Random();
             return background.FullName;
-        }
-
-        public string RandomCharacter(bool boss = false) {
-            return boss ? BossDir.GetFiles("*.png").Random().FullName : CharacterDir.GetFiles("*.png").Random().FullName;
-        }
-
-        public string RandomFromSearch(string charSearch = null, string backSearch = null) {
-            var cSearch = "*.png";
-            if (!string.IsNullOrEmpty(charSearch)) {
-                cSearch = charSearch;
-            }
-
-            var bSearch = "*.png";
-            if (!string.IsNullOrEmpty(backSearch)) {
-                bSearch = backSearch;
-            }
-
-            var character = CharacterDir.GetFiles(cSearch).Random();
-            var background = BackgroundDir.GetFiles(bSearch).Random();
-
-            return CreateImage(character.FullName, background.FullName);
         }
 
         public string NightTime(string backPath) {
@@ -119,8 +92,6 @@ namespace RPGBot.Generative {
 
                 if (!string.IsNullOrEmpty(charPath)) {
                     using (var cImg = Image.Load(charPath)) {
-                        //resize the character
-                        cImg.Mutate(x => x.Resize((int)(cImg.Width * 0.7), (int)(cImg.Height * 0.7)));
                         //set the 'center'
                         var point = new Point((img.Width / 2) - (cImg.Width / 2), (img.Height / 2) - (cImg.Height / 2));
                         //generate a little random offset

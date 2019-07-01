@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace RPGBot {
 
@@ -22,7 +21,9 @@ namespace RPGBot {
         //public Timer PeriodicEvent { get; private set; }
 
         public static List<GuildOption> GuildOptions;
+        private const int EventInterval = 60;
         public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
+
         public Bot() {
             GuildOptions = LoadGuildOptions();
         }
@@ -76,12 +77,89 @@ namespace RPGBot {
 
             await Client.ConnectAsync();
 
+            await Task.Delay(-1);
             while (true) {
                 var now = DateTime.Now;
                 var minutes = now.Minute;
-                var left = 60 - minutes;
+                var left = minutes % EventInterval;
                 await Task.Delay(TimeSpan.FromMinutes(left));
-                OnUpdate(null, null);
+                Console.WriteLine("STARTING EVENTS");
+                var channels = GuildOptions.Select(x => x.GetChannel());
+                var r = new Random();
+                await StartEvents(channels, r.Next(4, 20));
+            }
+        }
+
+        public static DiscordEmbedBuilder GetDefaultEmbed() {
+            var embed = new DiscordEmbedBuilder()
+                .WithTitle("[RPG-Bot]")
+                .WithColor(DiscordColor.MidnightBlue)
+                .WithFooter("[RPG-Bot] Made by Iggy & Jeff👏");
+            return embed;
+        }
+
+        public async static Task StartEvents(IEnumerable<DiscordChannel> channels, int enemyCount) {
+            foreach (var channel in channels) {
+                var option = GuildOptions.FirstOrDefault(x => x.GetChannel() == channel);
+                if (option != null) {
+                    if (option.RoleId != 0) {
+                        var role = channel.Guild.GetRole(option.RoleId);
+                        if (role != null) {
+                            try {
+                                if (role.IsMentionable) {
+                                    await channel.SendMessageAsync($"{role.Mention} New quest is starting!");
+                                    Console.WriteLine($"Pinging {role} on {channel.Guild.Name}.");
+                                    await Task.Delay(200);
+                                }
+                            } catch (System.Exception ex) {
+                                Console.WriteLine(ex);
+                            }
+                        }
+                    }
+                }
+            }
+
+            var guilds = Bot.Client.Guilds;
+            var tasks = new List<Task<Quest>>();
+
+            var random = new Random();
+            var questGenerator = new Generative.QuestGenerator();
+            var questName = questGenerator.GetResult();
+            var enemies = new string[enemyCount];
+            for (var i = 0; i < enemyCount; i++) {
+                enemies[i] = Generative.EnemyGenerator.RandomEnemy();
+            }
+            foreach (var channel in channels) {
+                var quest = new Quest(channel, questName, enemies, Generative.EnemyGenerator.RandomEnemy(true));
+                tasks.Add(quest.Start());
+            }
+
+            var quests = await Task.WhenAll(tasks);
+
+            if (quests == null || quests.Length == 0) {
+                Console.WriteLine("Quests was null or empty");
+                return;
+            }
+            await PostBoard(quests);
+        }
+
+        private static async Task PostBoard(Quest[] quests) {
+            if (quests.Length == 0) { return; }
+            var count = 0;
+            var clearedQuests = quests.Where(x => x.Success);
+            var questName = quests.First().QuestName;
+            var embed = Bot.GetDefaultEmbed()
+            .WithImageUrl("https://i.imgur.com/vVukN4y.png")
+            .AddField("__Quest__", questName);
+
+            if (clearedQuests.Count() > 0) {
+                embed = embed.AddField("**Ranks**", string.Join("\n", clearedQuests.Take(3).Select(x => $"{++count}) {x.Channel.Guild.Name} - {x.CompletedTime.ToString(@"mm\:ss")}")));
+            }
+            embed = embed.AddField("Event Stats", $"{quests.Count()} Guilds joined the event\n{quests.Where(x => x.Success).Count()} Guilds completed the event.");
+
+            foreach (var quest in quests) {
+                await quest.Channel.SendMessageAsync(embed: embed);
+                await Task.Delay(100);
             }
         }
 
@@ -101,21 +179,28 @@ namespace RPGBot {
             //get all the other data in here boys
             var serverCount = Bot.Client.Guilds.Count;
             var memberCount = Bot.Client.Guilds.Sum(x => x.Value.MemberCount);
+
             var activity = new DiscordActivity($"⚔ {Math.Floor(timeLeft.TotalMinutes)} minutes until next event.    [{serverCount} servers with {memberCount} members]", ActivityType.Streaming);
+
             await Bot.Client.UpdateStatusAsync(activity, UserStatus.Online);
         }
 
-        private void OnUpdate(object sender, ElapsedEventArgs e) {
-            Log(LogLevel.Info, "Starting Event");
-            foreach (var option in GuildOptions) {
-                var channel = option.GetChannel();
-                if (channel == null) { continue; }
-                var quest = new QuestEvent(channel);
+        //private void OnUpdate(object sender, ElapsedEventArgs e) {
+        //    Log(LogLevel.Info, "Starting Event");
+        //    var tasks = new List<Task>();
+        //    foreach (var option in GuildOptions) {
+        //        var channel = option.GetChannel();
+        //        if (channel == null) { continue; }
+        //        var quest = new Quest(channel, "Test-Quest", 10);
 
-                //We don't wanna call this async. Start them all at once
-                quest.StartQuest();
-            }
-        }
+        //        //We don't wanna call this async. Start them all at once
+        //        tasks.Add(quest.Start());
+
+        //    }
+        //    //once all tasks are done. Do things
+        //    Task.WhenAll(tasks).Wait();
+        //    Console.WriteLine("ALL QUESTS DONE");
+        //}
 
         private async Task OnMessageCreated(MessageCreateEventArgs e) {
             if (e.Author.IsBot) { return; }
@@ -127,7 +212,7 @@ namespace RPGBot {
                 if (command != null) {
                     try {
                         var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
-                        Commands.ExecuteCommandAsync(ctx);
+                        _ = Commands.ExecuteCommandAsync(ctx);
                     } catch (System.Exception ex) {
                         Log(LogLevel.Error, ex.ToString());
                     }
@@ -144,8 +229,9 @@ namespace RPGBot {
             }
 #if DEBUG
             return "xx";
-#endif
+#else
             return "!!";
+#endif
         }
 
         private List<GuildOption> LoadGuildOptions() {
@@ -157,7 +243,7 @@ namespace RPGBot {
             return options;
         }
 
-#region Event Callbacks
+        #region Event Callbacks
 
         private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
             Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
@@ -200,7 +286,7 @@ namespace RPGBot {
             await Task.Delay(1);
         }
 
-#endregion Event Callbacks
+        #endregion Event Callbacks
 
         private void Log(LogLevel level, string msg) {
             Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);

@@ -13,7 +13,7 @@ namespace RPGBot.Items {
         public abstract string ItemDescription { get; }
         public abstract int Count { get; set; }
 
-        public DiscordEmoji emoji { get; set; }
+        public DiscordEmoji emoji = null;
 
         public static IEnumerable<ItemBase> GetAllItems() {
             var items = typeof(ItemBase).Assembly.GetTypes()

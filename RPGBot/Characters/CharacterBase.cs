@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace RPGBot.Characters {
@@ -15,11 +16,25 @@ namespace RPGBot.Characters {
         public abstract float GoldMultiplier { get; }
         public abstract DiscordEmoji GetEmoji();
 
-        public static IEnumerable<CharacterBase> GetAllCharacters() {
-            var actions = typeof(CharacterBase).Assembly.GetTypes()
-                .Where(t => t.IsSubclassOf(typeof(CharacterBase)) && !t.IsAbstract)
-                .Select(t => (CharacterBase)Activator.CreateInstance(t));
-            return actions;
+        public static ReadOnlyCollection<CharacterBase> Characters { get {
+                if (characters == null) {
+                    characters = typeof(CharacterBase).Assembly.GetTypes()
+                    .Where(t => t.IsSubclassOf(typeof(CharacterBase)) && !t.IsAbstract)
+                    .Select(t => (CharacterBase)Activator.CreateInstance(t))
+                    .ToList()
+                    .AsReadOnly();
+                }
+                return characters;
+            }
+        }
+
+        private static ReadOnlyCollection<CharacterBase> characters = null;
+
+        public static CharacterBase GetCharacter(int characterId) {
+            foreach(var character in characters) {
+                if(character.Id == characterId) { return character; }
+            }
+            return null;
         }
     }
 }
