@@ -13,20 +13,33 @@ using System.Threading.Tasks;
 namespace RPGBot {
 
     public class Bot {
-        public static DiscordChannel ImageCache { get; private set; }
-        public static DiscordClient Client { get; private set; }
-        public Options Options { get; private set; }
-        public static CommandsNextExtension Commands { get; private set; }
-        public static InteractivityExtension Interactivty { get; private set; }
-        //public Timer PeriodicEvent { get; private set; }
 
-        public static List<GuildOption> GuildOptions;
-        private const int EventInterval = 60;
+        #region Public Fields
+
         public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
+        public static List<GuildOption> GuildOptions;
+
+        #endregion Public Fields
+
+        #region Public Properties
+
+        public static DiscordClient Client { get; private set; }
+        public static CommandsNextExtension Commands { get; private set; }
+        public static DiscordChannel ImageCache { get; private set; }
+        public static InteractivityExtension Interactivty { get; private set; }
+        public Options Options { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Constructors
 
         public Bot() {
             GuildOptions = LoadGuildOptions();
         }
+
+        #endregion Public Constructors
+
+        #region Public Methods
 
         public async Task RunAsync(Options options) {
             Client = new DiscordClient(new DiscordConfiguration {
@@ -90,6 +103,17 @@ namespace RPGBot {
             }
         }
 
+        #endregion Public Methods
+
+        #region Private Fields
+
+        //public Timer PeriodicEvent { get; private set; }
+        private const int EventInterval = 60;
+
+        #endregion Private Fields
+
+        #region Static Helpers
+
         public static DiscordEmbedBuilder GetDefaultEmbed() {
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("[RPG-Bot]")
@@ -98,7 +122,21 @@ namespace RPGBot {
             return embed;
         }
 
-        public async static Task StartEvents(IEnumerable<DiscordChannel> channels, int enemyCount) {
+        public static string GetPrefix(DiscordGuild guild) {
+            if (GuildOptions != null) {
+                var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
+                if (!string.IsNullOrEmpty(prefix)) {
+                    return prefix;
+                }
+            }
+#if DEBUG
+            return "xx";
+#else
+            return "!!";
+#endif
+        }
+
+        public async static Task PingRoles(IEnumerable<DiscordChannel> channels) {
             foreach (var channel in channels) {
                 var option = GuildOptions.FirstOrDefault(x => x.GetChannel() == channel);
                 if (option != null) {
@@ -118,32 +156,9 @@ namespace RPGBot {
                     }
                 }
             }
-
-            var guilds = Bot.Client.Guilds;
-            var tasks = new List<Task<Quest>>();
-
-            var random = new Random();
-            var questGenerator = new Generative.QuestGenerator();
-            var questName = questGenerator.GetResult();
-            var enemies = new string[enemyCount];
-            for (var i = 0; i < enemyCount; i++) {
-                enemies[i] = Generative.EnemyGenerator.RandomEnemy();
-            }
-            foreach (var channel in channels) {
-                var quest = new Quest(channel, questName, enemies, Generative.EnemyGenerator.RandomEnemy(true));
-                tasks.Add(quest.Start());
-            }
-
-            var quests = await Task.WhenAll(tasks);
-
-            if (quests == null || quests.Length == 0) {
-                Console.WriteLine("Quests was null or empty");
-                return;
-            }
-            await PostBoard(quests);
         }
 
-        private static async Task PostBoard(Quest[] quests) {
+        public static async Task PostLeaderboards(Quest[] quests) {
             if (quests.Length == 0) { return; }
             var count = 0;
             var clearedQuests = quests.Where(x => x.Success);
@@ -163,13 +178,47 @@ namespace RPGBot {
             }
         }
 
-        private async Task OnGuildCreated(GuildCreateEventArgs e) {
-            var channel = e.Guild.GetDefaultChannel();
-            await channel.SendMessageAsync("Thank you for inviting RPG Bot! Here are some tips to get you started. My default prefix is ``!!`` and can be changed by any admin of the server by using the command ``!!prefix newPrefix``. Adventures begin at the start of every hour. Currently, the adventures will show up in this channel. Admins can change the channel by using the command ``!!setchannel #otherchannel`` or by saying ``!!setchannel`` in the channel they wish to use. If you need any help, have suggestions or bugs to report, or just want to chat, you can join our support server here -> https://discord.gg/VMBn2yV");
+        public async static Task StartEvents(IEnumerable<DiscordChannel> channels, int enemyCount) {
+            await PingRoles(channels);
+            var questTasks = new List<Task<Quest>>();
+
+            var questGenerator = new Generative.QuestGenerator();
+            var questName = questGenerator.GetResult();
+            var enemies = new string[enemyCount];
+
+            for (var i = 0; i < enemyCount; i++) {
+                enemies[i] = Generative.EnemyGenerator.RandomEnemy();
+            }
+
+            foreach (var channel in channels) {
+                var quest = new Quest(channel, questName, enemies, Generative.EnemyGenerator.RandomEnemy(true));
+                questTasks.Add(quest.Start());
+            }
+
+            var quests = await Task.WhenAll(questTasks);
+
+            if (quests == null || quests.Length == 0) {
+                Console.WriteLine("Quests was null or empty");
+                return;
+            }
+            await PostLeaderboards(quests);
         }
 
-        private async Task OnSocketClosed(SocketCloseEventArgs e) {
-            await e.Client.ReconnectAsync(true);
+        #endregion Static Helpers
+
+        #region Private Methods
+
+        private List<GuildOption> LoadGuildOptions() {
+            var options = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
+            if (options == null) {
+                options = new List<GuildOption>();
+                DB.Insert(GuildOption.DBName, GuildOption.TableName, options);
+            }
+            return options;
+        }
+
+        private void Log(LogLevel level, string msg) {
+            Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);
         }
 
         private async Task OnHeartbeat(HeartbeatEventArgs e) {
@@ -185,70 +234,9 @@ namespace RPGBot {
             await Bot.Client.UpdateStatusAsync(activity, UserStatus.Online);
         }
 
-        //private void OnUpdate(object sender, ElapsedEventArgs e) {
-        //    Log(LogLevel.Info, "Starting Event");
-        //    var tasks = new List<Task>();
-        //    foreach (var option in GuildOptions) {
-        //        var channel = option.GetChannel();
-        //        if (channel == null) { continue; }
-        //        var quest = new Quest(channel, "Test-Quest", 10);
-
-        //        //We don't wanna call this async. Start them all at once
-        //        tasks.Add(quest.Start());
-
-        //    }
-        //    //once all tasks are done. Do things
-        //    Task.WhenAll(tasks).Wait();
-        //    Console.WriteLine("ALL QUESTS DONE");
-        //}
-
-        private async Task OnMessageCreated(MessageCreateEventArgs e) {
-            if (e.Author.IsBot) { return; }
-            await Task.Delay(10);
-            var prefix = GetPrefix(e.Guild);
-            if (e.Message.Content.StartsWith(prefix)) {
-                var cmdText = e.Message.Content.Substring(prefix.Length);
-                var command = Commands.FindCommand(cmdText, out var rawArgs);
-                if (command != null) {
-                    try {
-                        var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
-                        _ = Commands.ExecuteCommandAsync(ctx);
-                    } catch (System.Exception ex) {
-                        Log(LogLevel.Error, ex.ToString());
-                    }
-                }
-            }
-        }
-
-        public static string GetPrefix(DiscordGuild guild) {
-            if (GuildOptions != null) {
-                var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
-                if (!string.IsNullOrEmpty(prefix)) {
-                    return prefix;
-                }
-            }
-#if DEBUG
-            return "xx";
-#else
-            return "!!";
-#endif
-        }
-
-        private List<GuildOption> LoadGuildOptions() {
-            var options = DB.GetAll<GuildOption>(GuildOption.DBName, GuildOption.TableName).ToList();
-            if (options == null) {
-                options = new List<GuildOption>();
-                DB.Insert(GuildOption.DBName, GuildOption.TableName, options);
-            }
-            return options;
-        }
+        #endregion Private Methods
 
         #region Event Callbacks
-
-        private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
-            Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
-            await Task.Delay(1);
-        }
 
         private async Task OnClientErrored(ClientErrorEventArgs e) {
             Log(LogLevel.Error, e.Exception.ToString());
@@ -286,10 +274,38 @@ namespace RPGBot {
             await Task.Delay(1);
         }
 
-        #endregion Event Callbacks
-
-        private void Log(LogLevel level, string msg) {
-            Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);
+        private async Task OnGuildCreated(GuildCreateEventArgs e) {
+            var channel = e.Guild.GetDefaultChannel();
+            await channel.SendMessageAsync("Thank you for inviting RPG Bot! Here are some tips to get you started. My default prefix is ``!!`` and can be changed by any admin of the server by using the command ``!!prefix newPrefix``. Adventures begin at the start of every hour. Currently, the adventures will show up in this channel. Admins can change the channel by using the command ``!!setchannel #otherchannel`` or by saying ``!!setchannel`` in the channel they wish to use. If you need any help, have suggestions or bugs to report, or just want to chat, you can join our support server here -> https://discord.gg/VMBn2yV");
         }
+
+        private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
+            Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
+            await Task.Delay(1);
+        }
+
+        private async Task OnMessageCreated(MessageCreateEventArgs e) {
+            if (e.Author.IsBot) { return; }
+            await Task.Delay(10);
+            var prefix = GetPrefix(e.Guild);
+            if (e.Message.Content.StartsWith(prefix)) {
+                var cmdText = e.Message.Content.Substring(prefix.Length);
+                var command = Commands.FindCommand(cmdText, out var rawArgs);
+                if (command != null) {
+                    try {
+                        var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
+                        _ = Commands.ExecuteCommandAsync(ctx);
+                    } catch (System.Exception ex) {
+                        Log(LogLevel.Error, ex.ToString());
+                    }
+                }
+            }
+        }
+
+        private async Task OnSocketClosed(SocketCloseEventArgs e) {
+            await e.Client.ReconnectAsync(true);
+        }
+
+        #endregion Event Callbacks
     }
 }
