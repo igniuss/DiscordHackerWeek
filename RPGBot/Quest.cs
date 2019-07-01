@@ -47,7 +47,7 @@ namespace RPGBot {
         public string[] Enemies { get; }
         public float MaxHP { get; private set; }
         public string QuestName { get; private set; }
-        public bool Success { get; set; }
+        public bool Success { get; private set; }
         public ulong[] UserIds { get; private set; }
 
         #endregion Public Properties
