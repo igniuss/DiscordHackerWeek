@@ -92,7 +92,7 @@ namespace RPGBot {
                 var userIds = new List<ulong>();
                 var characters = CharacterBase.Characters;
                 foreach (var character in characters) {
-                    await Task.Delay(300);
+                    await Task.Delay(500);
                     var users = await msg.GetReactionsAsync(character.GetEmoji());
                     foreach (var user in users) {
                         if (user.IsBot) { continue; }
@@ -128,8 +128,9 @@ namespace RPGBot {
                 for (EncounterIndex = 0; EncounterIndex < EncounterCount; EncounterIndex++) {
                     //do an encounter
                     await msg.DeleteAsync();
-                    Console.WriteLine($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
                     await Task.Delay(500);
+
+                    Console.WriteLine($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
                     var enemy = Enemies[EncounterIndex];
 
                     //Fetch updated player stats
@@ -140,19 +141,20 @@ namespace RPGBot {
                     enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.75f, 2f));
 
                     var survivors = await Encounter(enemy, enemyLevel);
-                    if (survivors == null || survivors.Count() == 0) {
+                    if (survivors.Ids == null || survivors.Ids.Count() == 0) {
+                        embed.WithDescription(survivors.Message);
+                        await Channel.SendMessageAsync(embed: embed);
                         Success = false;
                         Timer.Stop();
                         return this;
                     }
-                    UserIds = survivors.ToArray();
+
+                    UserIds = survivors.Ids.ToArray();
                     //wait between 30 and 120 seconds for next encounter.
 
                     var newEmbed = await RandomEvent(GetQuestCommences());
                     msg = await Channel.SendMessageAsync(embed: newEmbed);
-                    await Task.Delay(500);
-
-                    await Task.Delay(TimeSpan.FromSeconds(random.Range(30f, 120f)));
+                    await Task.Delay(TimeSpan.FromSeconds(random.Range(20f, 60f)));
                 }
                 //BOSS FIGHT
                 {
@@ -169,12 +171,13 @@ namespace RPGBot {
                     enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 20f));
 
                     var survivors = await Encounter(enemy, enemyLevel);
-                    if (survivors == null || survivors.Count() == 0) {
+                    if (survivors.Ids == null || survivors.Ids.Count() == 0) {
+                        embed.WithDescription(survivors.Message);
+                        await Channel.SendMessageAsync(embed: embed);
                         Success = false;
                         Timer.Stop();
                         return this;
                     }
-                    UserIds = survivors.ToArray();
                 }
 
                 Success = true;
@@ -183,7 +186,6 @@ namespace RPGBot {
                 Console.WriteLine(ex);
             }
             return this;
-
         }
 
         #endregion Public Methods
@@ -216,7 +218,11 @@ namespace RPGBot {
             return (ulong)Math.Ceiling(enemyLevel * 25f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
         }
 
-        private async Task<IEnumerable<ulong>> Encounter(string enemyPath, int enemyLevel) {
+        private struct EncounterData {
+            public IEnumerable<ulong> Ids { get; set; }
+            public string Message { get; set; }
+        }
+        private async Task<EncounterData> Encounter(string enemyPath, int enemyLevel) {
             try {
                 var path = ImageGenerator.CreateOrGetImage(enemyPath, BackgroundPath, CurrentHP / MaxHP);
                 var url = await ImageGenerator.GetImageURL(path);
@@ -229,6 +235,7 @@ namespace RPGBot {
                 var actions = Actions.ActionBase.GetAllActions();
                 var turnCount = 0;
                 var enemyName = Generative.NamesGenerator.Instance.GetResult();
+                var additional = "";
                 while (true) {
                     turnCount++;
 
@@ -242,6 +249,10 @@ namespace RPGBot {
                         .AddField("__Encounter__", $"{enemyName} - LVL {enemyLevel}")
                         .AddField($"HP - {CurrentHP.ToString("0.00")} / {MaxHP.ToString("0.00")}", $"`{ProgressBar.GetProcessBar(healthPercentage)}`")
                         .AddField($"Enemy - {currentHPEnemy.ToString("0.00")} / {maxHPEnemy.ToString("0.00")}", $"`{ProgressBar.GetProcessBar(healthPercentageEnemy)}`");
+
+                    if (!string.IsNullOrEmpty(additional)) {
+                        embed.AddField("Info", additional);
+                    }
 
                     if (msg != null) {
                         await msg.DeleteAsync();
@@ -318,7 +329,6 @@ namespace RPGBot {
                             }
                         }
                     }
-
                     //LEAVE IF NO PLAYERS REMAIN
                     if (currentUserIds.Count == 0) {
                         await msg.DeleteAsync();
@@ -333,8 +343,9 @@ namespace RPGBot {
                             player.Update();
                         }
 
-                        await Channel.SendMessageAsync($"The remaining party ran away safely, and received {exp} exp and {gold} gold.");
-                        return null;
+                        return new EncounterData {
+                            Message = $"The remaining party ran away safely, and received {exp} exp and {gold} gold."
+                        };
                     }
 
                     currentHPEnemy -= totalAttacked;
@@ -351,11 +362,15 @@ namespace RPGBot {
                         }
 
                         await Task.Delay(500);
-                        await Channel.SendMessageAsync($"Everyone pulled together, and defeated the enemy in {turnCount} turns!\nReceived a total of {exp} exp and {gold} gold.");
-                        return currentPlayerActions.Keys;
-                    }
+                        return new EncounterData() {
+                            Ids = currentPlayerActions.Keys,
+                            Message = $"Everyone pulled together, and defeated the enemy in {turnCount} turns!\nReceived a total of {exp} exp and {gold} gold.",
+                        };
 
-                    CurrentHP -= Math.Max(0, CalculateDamage(enemyLevel) - totalBlocked);
+                    }
+                    var damage = CalculateDamage(enemyLevel);
+                    additional = $"Dealth {totalAttacked} and blocked {Math.Min(totalBlocked, damage)} damage";
+                    CurrentHP -= Math.Max(0, damage - totalBlocked);
                     if (CurrentHP <= 0f) {
                         //dead
                         await msg.DeleteAsync();
@@ -368,15 +383,17 @@ namespace RPGBot {
                         }
 
                         await Task.Delay(500);
-                        await Channel.SendMessageAsync($"Everyone died in {turnCount} turns and lost {exp} exp.");
-                        return null;
+                        return new EncounterData {
+                            Ids = null,
+                            Message = $"Everyone died in {turnCount} turns and lost {exp} exp."
+                        };
                     }
 
                     #endregion Handle Actions
                 }
             } catch (System.Exception ex) {
                 Console.WriteLine(ex);
-                return null;
+                return new EncounterData();
             }
         }
 

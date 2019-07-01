@@ -45,6 +45,11 @@ namespace RPGBot.Commands {
                     return;
                 }
                 if (role != null) {
+                    if (!role.IsMentionable) {
+                        await ctx.RespondAsync($"@{role.Name} isn't mentionable. Please make sure I can mention the role.");
+                        return;
+                    }
+
                     var guild = Bot.GuildOptions.Find(x => x.Id == ctx.Guild.Id);
                     if (guild == null) { guild = new GuildOption { Id = ctx.Guild.Id }; }
 
