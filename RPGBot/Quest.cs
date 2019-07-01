@@ -15,6 +15,20 @@ namespace RPGBot {
 
     public class Quest {
 
+        #region Private Structs
+
+        private struct EncounterData {
+
+            #region Public Properties
+
+            public IEnumerable<ulong> Ids { get; set; }
+            public string Message { get; set; }
+
+            #endregion Public Properties
+        }
+
+        #endregion Private Structs
+
         #region Public Fields
 
         public TimeSpan waitTime = TimeSpan.FromMinutes(0.1f);
@@ -30,16 +44,19 @@ namespace RPGBot {
 
         #region Public Properties
 
+        public string BackgroundPath { get; private set; }
+
+        public string BackgroundUrl { get; private set; }
+
+        public string Boss { get; }
+
+        public DiscordChannel Channel { get; private set; }
+
         public TimeSpan CompletedTime {
             get {
                 return Timer.Elapsed;
             }
         }
-
-        public string BackgroundPath { get; private set; }
-        public string BackgroundUrl { get; private set; }
-        public string Boss { get; }
-        public DiscordChannel Channel { get; private set; }
         public float CurrentHP { get; set; }
         public int EncounterCount { get; private set; }
         public int EncounterIndex { get; private set; }
@@ -153,6 +170,9 @@ namespace RPGBot {
                     //wait between 30 and 120 seconds for next encounter.
 
                     var newEmbed = await RandomEvent(GetQuestCommences());
+                    if (!string.IsNullOrEmpty(survivors.Message)) {
+                        newEmbed.AddField("Status", survivors.Message);
+                    }
                     msg = await Channel.SendMessageAsync(embed: newEmbed);
                     await Task.Delay(TimeSpan.FromSeconds(random.Range(20f, 60f)));
                 }
@@ -192,20 +212,6 @@ namespace RPGBot {
 
         #region Private Methods
 
-        private async Task<DiscordEmbedBuilder> RandomEvent(DiscordEmbedBuilder embed) {
-            //50% chance
-            if (random.Range(0f, 1f) <= 0.5f) {
-                var e = RandomEvents.RandomEvent.Events.Random();
-                var data = await e.DoEvent(this);
-
-                embed.AddField("**Event**", $"{data.Message}");
-                if (!string.IsNullOrEmpty(data.Url)) {
-                    embed.WithImageUrl(data.Url);
-                }
-            }
-            return embed;
-        }
-
         private float CalculateDamage(int enemyLevel) {
             return enemyLevel * 5f * random.Range(1f, 3f);
         }
@@ -218,10 +224,6 @@ namespace RPGBot {
             return (ulong)Math.Ceiling(enemyLevel * 25f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
         }
 
-        private struct EncounterData {
-            public IEnumerable<ulong> Ids { get; set; }
-            public string Message { get; set; }
-        }
         private async Task<EncounterData> Encounter(string enemyPath, int enemyLevel) {
             try {
                 var path = ImageGenerator.CreateOrGetImage(enemyPath, BackgroundPath, CurrentHP / MaxHP);
@@ -366,7 +368,6 @@ namespace RPGBot {
                             Ids = currentPlayerActions.Keys,
                             Message = $"Everyone pulled together, and defeated the enemy in {turnCount} turns!\nReceived a total of {exp} exp and {gold} gold.",
                         };
-
                     }
                     var damage = CalculateDamage(enemyLevel);
                     additional = $"Dealth {totalAttacked} and blocked {Math.Min(totalBlocked, damage)} damage";
@@ -425,6 +426,19 @@ namespace RPGBot {
             return msg;
         }
 
+        private async Task<DiscordEmbedBuilder> RandomEvent(DiscordEmbedBuilder embed) {
+            //50% chance
+            if (random.Range(0f, 1f) <= 0.5f) {
+                var e = RandomEvents.RandomEvent.Events.Random();
+                var data = await e.DoEvent(this);
+
+                embed.AddField("**Event**", $"{data.Message}");
+                if (!string.IsNullOrEmpty(data.Url)) {
+                    embed.WithImageUrl(data.Url);
+                }
+            }
+            return embed;
+        }
         private void UpdateHP(IEnumerable<Player> players) {
             var diff = MaxHP - CurrentHP;
             MaxHP = players.Sum(x => x.GetTotalHP());
