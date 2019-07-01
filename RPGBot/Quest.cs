@@ -166,7 +166,7 @@ namespace RPGBot {
                     UpdateHP(players);
 
                     var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 10f));
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 20f));
 
                     var survivors = await Encounter(enemy, enemyLevel);
                     if (survivors == null || survivors.Count() == 0) {
