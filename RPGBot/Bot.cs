@@ -182,7 +182,7 @@ namespace RPGBot {
             await PingRoles(channels);
             var questTasks = new List<Task<Quest>>();
 
-            var questGenerator = new Generative.QuestGenerator();
+            var questGenerator = Generative.QuestGenerator.Instance;
             var questName = questGenerator.GetResult();
             var enemies = new string[enemyCount];
 

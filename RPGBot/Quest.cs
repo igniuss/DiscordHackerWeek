@@ -7,7 +7,6 @@ using RPGBot.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ namespace RPGBot {
         #region Private Fields
 
         private static readonly ConcurrentDictionary<string, string> CachedImages = new ConcurrentDictionary<string, string>();
-        private static readonly ImageGenerator ImgGenerator = new ImageGenerator();
         private static readonly Random random = new Random();
 
         #endregion Private Fields
@@ -42,7 +40,7 @@ namespace RPGBot {
         public string BackgroundUrl { get; private set; }
         public string Boss { get; }
         public DiscordChannel Channel { get; private set; }
-        public float CurrentHP { get; private set; }
+        public float CurrentHP { get; set; }
         public int EncounterCount { get; private set; }
         public int EncounterIndex { get; private set; }
         public string[] Enemies { get; }
@@ -74,104 +72,137 @@ namespace RPGBot {
         #region Public Methods
 
         public async Task<Quest> Start() {
-            Timer = System.Diagnostics.Stopwatch.StartNew();
-            //Send 'Starting Quest'
+            try {
+                Timer = System.Diagnostics.Stopwatch.StartNew();
+                //Send 'Starting Quest'
 
-            BackgroundPath = ImgGenerator.RandomBackground();
+                BackgroundPath = ImageGenerator.RandomBackground();
 
-            #region Starting Quest
+                #region Starting Quest
 
-            var msg = await PostStartMessage();
-            //Collect players playing.
+                var msg = await PostStartMessage();
+                //Collect players playing.
 
-            #endregion Starting Quest
+                #endregion Starting Quest
 
-            await Task.Delay(this.waitTime);
+                await Task.Delay(this.waitTime);
 
-            #region CollectPlayers
+                #region CollectPlayers
 
-            var userIds = new List<ulong>();
-            var characters = CharacterBase.Characters;
-            foreach (var character in characters) {
-                await Task.Delay(300);
-                var users = await msg.GetReactionsAsync(character.GetEmoji());
-                foreach (var user in users) {
-                    if (user.IsBot) { continue; }
-                    if (userIds.Contains(user.Id)) { continue; }
+                var userIds = new List<ulong>();
+                var characters = CharacterBase.Characters;
+                foreach (var character in characters) {
+                    await Task.Delay(300);
+                    var users = await msg.GetReactionsAsync(character.GetEmoji());
+                    foreach (var user in users) {
+                        if (user.IsBot) { continue; }
+                        if (userIds.Contains(user.Id)) { continue; }
 
-                    var player = Player.GetPlayer(Channel.GuildId, user.Id);
-                    player.characterId = character.Id;
-                    if (player.Update()) {
-                        userIds.Add(user.Id);
+                        var player = Player.GetPlayer(Channel.GuildId, user.Id);
+                        player.characterId = character.Id;
+                        if (player.Update()) {
+                            userIds.Add(user.Id);
+                        }
                     }
                 }
-            }
 
-            //TODO: no-one joined.
-            if (userIds.Count == 0) {
+                //TODO: no-one joined.
+                if (userIds.Count == 0) {
+                    Timer.Stop();
+                    Success = false;
+                    return null;
+                }
+
+                UserIds = userIds.ToArray();
+                await msg.DeleteAsync();
+                await Task.Delay(500);
+
+                #endregion CollectPlayers
+
+                var embed = GetQuestCommences();
+                msg = await Channel.SendMessageAsync(embed: embed);
+                await Task.Delay(500);
+
+                await Task.Delay(this.waitTime);
+
+                for (EncounterIndex = 0; EncounterIndex < EncounterCount; EncounterIndex++) {
+                    //do an encounter
+                    await msg.DeleteAsync();
+                    Console.WriteLine($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
+                    await Task.Delay(500);
+                    var enemy = Enemies[EncounterIndex];
+
+                    //Fetch updated player stats
+                    var players = Player.GetPlayers(Channel.GuildId, UserIds);
+                    UpdateHP(players);
+
+                    var enemyLevel = players.Sum(x => x.GetCurrentLevel());
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.75f, 2f));
+
+                    var survivors = await Encounter(enemy, enemyLevel);
+                    if (survivors == null || survivors.Count() == 0) {
+                        Success = false;
+                        Timer.Stop();
+                        return this;
+                    }
+                    UserIds = survivors.ToArray();
+                    //wait between 30 and 120 seconds for next encounter.
+
+                    var newEmbed = await RandomEvent(GetQuestCommences());
+                    msg = await Channel.SendMessageAsync(embed: newEmbed);
+                    await Task.Delay(500);
+
+                    await Task.Delay(TimeSpan.FromSeconds(random.Range(30f, 120f)));
+                }
+                //BOSS FIGHT
+                {
+                    await msg.DeleteAsync();
+                    Console.WriteLine("Boss Fight");
+                    await Task.Delay(500);
+                    var enemy = Boss;
+
+                    //Fetch updated player stats
+                    var players = Player.GetPlayers(Channel.GuildId, UserIds);
+                    UpdateHP(players);
+
+                    var enemyLevel = players.Sum(x => x.GetCurrentLevel());
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 10f));
+
+                    var survivors = await Encounter(enemy, enemyLevel);
+                    if (survivors == null || survivors.Count() == 0) {
+                        Success = false;
+                        Timer.Stop();
+                        return this;
+                    }
+                    UserIds = survivors.ToArray();
+                }
+
+                Success = true;
                 Timer.Stop();
-                Success = false;
-                return null;
+            } catch (System.Exception ex) {
+                Console.WriteLine(ex);
             }
-
-            UserIds = userIds.ToArray();
-            await msg.DeleteAsync();
-
-            #endregion CollectPlayers
-
-            msg = await PostQuestCommenceMessage();
-            await Task.Delay(this.waitTime);
-
-            for (EncounterIndex = 0; EncounterIndex < EncounterCount; EncounterIndex++) {
-                //do an encounter
-                var enemy = Enemies[EncounterIndex];
-
-                //Fetch updated player stats
-                var players = Player.GetPlayers(Channel.GuildId, UserIds);
-                UpdateHP(players);
-
-                var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.75f, 2f));
-
-                var survivors = await Encounter(enemy, enemyLevel);
-                if (survivors == null || survivors.Count() == 0) {
-                    Success = false;
-                    Timer.Stop();
-                    return this;
-                }
-                UserIds = survivors.ToArray();
-                //wait between 30 and 120 seconds for next encounter.
-                await Task.Delay(TimeSpan.FromSeconds(random.Range(30f, 120f)));
-            }
-            //BOSS FIGHT
-            {
-                var enemy = Boss;
-
-                //Fetch updated player stats
-                var players = Player.GetPlayers(Channel.GuildId, UserIds);
-                UpdateHP(players);
-
-                var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 5f));
-
-                var survivors = await Encounter(enemy, enemyLevel);
-                if (survivors == null || survivors.Count() == 0) {
-                    Success = false;
-                    Timer.Stop();
-                    return this;
-                }
-                UserIds = survivors.ToArray();
-            }
-
-            Success = true;
-            Timer.Stop();
-
             return this;
+
         }
 
         #endregion Public Methods
 
         #region Private Methods
+
+        private async Task<DiscordEmbedBuilder> RandomEvent(DiscordEmbedBuilder embed) {
+            //50% chance
+            if (random.Range(0f, 1f) <= 0.5f) {
+                var e = RandomEvents.RandomEvent.Events.Random();
+                var data = await e.DoEvent(this);
+
+                embed.AddField("**Event**", $"{data.Message}");
+                if (!string.IsNullOrEmpty(data.Url)) {
+                    embed.WithImageUrl(data.Url);
+                }
+            }
+            return embed;
+        }
 
         private float CalculateDamage(int enemyLevel) {
             return enemyLevel * 5f * random.Range(1f, 3f);
@@ -187,7 +218,8 @@ namespace RPGBot {
 
         private async Task<IEnumerable<ulong>> Encounter(string enemyPath, int enemyLevel) {
             try {
-                var url = await GetImageURL(enemyPath, BackgroundPath, CurrentHP / MaxHP);
+                var path = ImageGenerator.CreateOrGetImage(enemyPath, BackgroundPath, CurrentHP / MaxHP);
+                var url = await ImageGenerator.GetImageURL(path);
                 var currentUserIds = UserIds.ToList();
 
                 var maxHPEnemy = enemyLevel * 50 * random.Range(0.8f, 1.5f);
@@ -196,6 +228,7 @@ namespace RPGBot {
                 DiscordMessage msg = null;
                 var actions = Actions.ActionBase.GetAllActions();
                 var turnCount = 0;
+                var enemyName = Generative.NamesGenerator.Instance.GetResult();
                 while (true) {
                     turnCount++;
 
@@ -206,7 +239,7 @@ namespace RPGBot {
                         .WithImageUrl(url)
                         .AddField("Quest", QuestName)
                         .WithColor(new DiscordColor(1f, healthPercentage, healthPercentage))
-                        .AddField("__Encounter__", $"{System.IO.Path.GetFileNameWithoutExtension(enemyPath)} - LVL {enemyLevel}")
+                        .AddField("__Encounter__", $"{enemyName} - LVL {enemyLevel}")
                         .AddField($"HP - {CurrentHP.ToString("0.00")} / {MaxHP.ToString("0.00")}", $"`{ProgressBar.GetProcessBar(healthPercentage)}`")
                         .AddField($"Enemy - {currentHPEnemy.ToString("0.00")} / {maxHPEnemy.ToString("0.00")}", $"`{ProgressBar.GetProcessBar(healthPercentageEnemy)}`");
 
@@ -296,7 +329,7 @@ namespace RPGBot {
                             var player = Player.GetPlayer(Channel.GuildId, id);
                             player.AddExperience(exp);
                             player.AddGold(gold);
-                            MaxHP -= player.GetHP();
+                            MaxHP -= player.GetTotalHP();
                             player.Update();
                         }
 
@@ -347,45 +380,20 @@ namespace RPGBot {
             }
         }
 
-        private async Task<string> GetImageURL(string enemy, string background, float HPPercentage) {
-            var percentage = 1f - HPPercentage;
-            var rounded = (float)Math.Round(percentage * 4f) / 4f; //Round this to 1/4ths, we don't need more precision than this.
-
-            var damagePath = ImgGenerator.SimulateDamage(ImgGenerator.CreateImage(enemy, background), rounded);
-            var enemyName = Path.GetFileNameWithoutExtension(enemy);
-            var backgroundName = Path.GetFileNameWithoutExtension(background);
-            var cacheName = $"{enemyName}_{backgroundName}_{rounded.ToString("0.00")}.cache";
-
-            var cachedInfo = new FileInfo(Path.Combine("Cache", cacheName));
-            if (!cachedInfo.Directory.Exists) {
-                cachedInfo.Directory.Create();
-            }
-            if (cachedInfo.Exists) {
-                using (var read = cachedInfo.OpenText()) {
-                    return read.ReadToEnd();
-                }
-            }
-
-            var msg = await Bot.ImageCache.SendFileAsync(damagePath);
-            var url = msg.Attachments.First().Url;
-
-            File.WriteAllText(cachedInfo.FullName, url);
-            return url;
-        }
-
-        private async Task<DiscordMessage> PostQuestCommenceMessage() {
+        private DiscordEmbedBuilder GetQuestCommences() {
             var players = Player.GetPlayers(Channel.GuildId, UserIds);
-            var embed = Bot.GetDefaultEmbed()
+            return Bot.GetDefaultEmbed()
                 .WithImageUrl(BackgroundUrl)
                 .AddField("Quest", QuestName)
                 .AddField("Characters", string.Join("\n", CharacterBase.Characters.Select(x => $"{x.GetEmoji()} - {x.GetType().Name} - {players.Count(p => p.characterId == x.Id)}")))
                 //.AddField("Players", Channel.Users.Where(x => UserIds.Contains(x.Id)).Select(x => x.Username)))
                 ;
-            return await Channel.SendMessageAsync(embed: embed);
         }
 
         private async Task<DiscordMessage> PostStartMessage() {
-            BackgroundUrl = await GetImageURL(null, BackgroundPath, 1f);
+            var path = ImageGenerator.CreateOrGetImage(null, BackgroundPath, 1f);
+            BackgroundUrl = await ImageGenerator.GetImageURL(path);
+
             var embed = Bot.GetDefaultEmbed()
                 .WithImageUrl(BackgroundUrl)
                 .AddField("Quest", QuestName);
@@ -402,7 +410,7 @@ namespace RPGBot {
 
         private void UpdateHP(IEnumerable<Player> players) {
             var diff = MaxHP - CurrentHP;
-            MaxHP = players.Sum(x => x.GetHP());
+            MaxHP = players.Sum(x => x.GetTotalHP());
             CurrentHP = MaxHP - diff;
         }
 

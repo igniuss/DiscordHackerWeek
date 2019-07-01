@@ -4,13 +4,12 @@ using System.IO;
 using System.Linq;
 
 namespace RPGBot.Generative {
-
     public abstract class RantGenerator {
         public abstract string RantPath { get; }
         private readonly RantEngine Engine = new RantEngine();
         private RantProgram Program;
 
-        public RantGenerator() {
+        internal RantGenerator() {
             if (string.IsNullOrEmpty(RantPath) || !File.Exists(RantPath)) {
                 throw new FileNotFoundException(RantPath);
             }

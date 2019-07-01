@@ -82,7 +82,7 @@ namespace RPGBot.Models {
             return CalculateLevel(exp);
         }
 
-        public float GetHP() {
+        public float GetTotalHP() {
             var character = CharacterBase.GetCharacter(characterId);
             if (character == null) { return 0f; }
             var lvl = GetCurrentLevel();
