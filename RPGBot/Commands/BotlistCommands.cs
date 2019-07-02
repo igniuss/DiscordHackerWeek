@@ -22,11 +22,12 @@ namespace RPGBot.Commands {
                         var plusEmoji = DiscordEmoji.FromName(ctx.Client, ":blue_heart:");
                         var minEmoji = DiscordEmoji.FromName(ctx.Client, ":no_entry_sign:");
                         var maxStreak = 10ul;
-                        embed.AddField("__Streak__", $"{string.Join(' ', Enumerable.Repeat(plusEmoji, (int)player.VoteStreak))} {string.Join(' ', Enumerable.Repeat(minEmoji, (int)(maxStreak - player.VoteStreak)))}");
 
                         //less than 12 hours ago?.. Yeah no, gotta wait pal!
                         if (DateTime.Now - player.LastVoted < TimeSpan.FromHours(12)) {
                             embed.WithDescription($"Thanks for voting!\nYou've already received your gold though, try again in 12 hours 😉");
+                            embed.AddField("__Streak__", $"{string.Join(' ', Enumerable.Repeat(plusEmoji, (int)player.VoteStreak))} {string.Join(' ', Enumerable.Repeat(minEmoji, (int)(maxStreak - player.VoteStreak)))}");
+
                             await ctx.RespondAsync(embed: embed);
                             return;
                         }
@@ -50,6 +51,7 @@ namespace RPGBot.Commands {
                         player.Gold += goldReceived;
                         player.Update();
 
+                        embed.AddField("__Streak__", $"{string.Join(' ', Enumerable.Repeat(plusEmoji, (int)player.VoteStreak))} {string.Join(' ', Enumerable.Repeat(minEmoji, (int)(maxStreak - player.VoteStreak)))}");
                         embed.WithDescription($"Thanks for voting!\nYou've received {goldReceived} gold.");
                         await ctx.RespondAsync(embed: embed);
                         return;

@@ -1,6 +1,7 @@
 ﻿using RPGBot.Generative;
 using RPGBot.Models;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RPGBot.RandomEvents {
@@ -13,16 +14,17 @@ namespace RPGBot.RandomEvents {
 
         public override async Task<EventData> DoEvent(Quest quest) {
             var players = Player.GetPlayers(quest.Channel.GuildId, quest.UserIds);
-            var count = this.random.Next(2, 20);
+            var mercCount = this.random.Next(2, 20);
             foreach (var player in players) {
-                player.CurrentMercenaries += count;
+                player.CurrentMercenaries += mercCount;
                 player.Update();
             }
 
             var imgPath = ImageGenerator.Campsite(ImageGenerator.CreateOrGetImage(null, quest.BackgroundPath, 1f));
+            var total = players.Count() * mercCount;
             var ret = new EventData {
                 Url = await ImageGenerator.GetImageURL(imgPath),
-                Message = $"{Description}\nThey joined your party\nEveryone gained {count} mercenaries",
+                Message = $"{Description}\n{total} mercenaries joined your Quest.",
             };
             return ret;
         }

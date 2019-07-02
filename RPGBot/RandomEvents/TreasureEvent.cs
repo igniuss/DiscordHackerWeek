@@ -23,7 +23,7 @@ namespace RPGBot.RandomEvents {
 
         public async override Task<EventData> DoEvent(Quest quest) {
             var players = Player.GetPlayers(quest.Channel.GuildId, quest.UserIds);
-            var gold = (ulong)Math.Round(this.random.Range(10f, 1500f));
+            var gold = (ulong)Math.Round(this.random.Range(10f, 5000f));
             foreach (var player in players) {
                 player.AddGold(gold);
                 player.Update();

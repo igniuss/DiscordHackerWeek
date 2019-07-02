@@ -155,9 +155,10 @@ namespace RPGBot {
                     UpdateHP(players);
 
                     var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.75f, 2f));
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.8f, 5f));
 
-                    var survivors = await Encounter(enemy, enemyLevel);
+                    var enemyName = Generative.NamesGenerator.Instance.GetResult();
+                    var survivors = await Encounter(enemy, enemyLevel, enemyName);
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
                         await Channel.SendMessageAsync(embed: embed);
@@ -190,7 +191,8 @@ namespace RPGBot {
                     var enemyLevel = players.Sum(x => x.GetCurrentLevel());
                     enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 20f));
 
-                    var survivors = await Encounter(enemy, enemyLevel);
+                    var enemyName = Generative.NamesGenerator.Instance.GetResult();
+                    var survivors = await Encounter(enemy, enemyLevel, $"Boss {enemyName}");
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
                         await Channel.SendMessageAsync(embed: embed);
@@ -224,7 +226,7 @@ namespace RPGBot {
             return (ulong)Math.Ceiling(enemyLevel * 25f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
         }
 
-        private async Task<EncounterData> Encounter(string enemyPath, int enemyLevel) {
+        private async Task<EncounterData> Encounter(string enemyPath, int enemyLevel, string enemyName) {
             try {
                 var path = ImageGenerator.CreateOrGetImage(enemyPath, BackgroundPath, CurrentHP / MaxHP);
                 var url = await ImageGenerator.GetImageURL(path);
@@ -236,7 +238,6 @@ namespace RPGBot {
                 DiscordMessage msg = null;
                 var actions = Actions.ActionBase.GetAllActions();
                 var turnCount = 0;
-                var enemyName = Generative.NamesGenerator.Instance.GetResult();
                 var additional = "";
                 while (true) {
                     turnCount++;
@@ -270,6 +271,7 @@ namespace RPGBot {
 
                     async Task CollectActions(CancellationToken token) {
                         while (currentPlayerActions.Values.Any(x => x == -1)) {
+                            await Task.Delay(1000);
                             foreach (var action in actions) {
                                 if (token.IsCancellationRequested) { return; }
                                 var reactions = await msg.GetReactionsAsync(action.GetEmoji());
@@ -370,8 +372,8 @@ namespace RPGBot {
                         };
                     }
                     var damage = CalculateDamage(enemyLevel);
-                    additional = $"Dealth {totalAttacked} and blocked {Math.Min(totalBlocked, damage)} damage";
                     CurrentHP -= Math.Max(0, damage - totalBlocked);
+                    additional = $"Dealt {totalAttacked.ToString("0.00")} damage, and received {Math.Max(0, damage - totalBlocked).ToString("0.00")} damage";
                     if (CurrentHP <= 0f) {
                         //dead
                         await msg.DeleteAsync();
