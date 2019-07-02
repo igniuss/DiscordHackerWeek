@@ -191,14 +191,23 @@ namespace RPGBot {
 
             var questGenerator = Generative.QuestGenerator.Instance;
             var questName = questGenerator.GetResult();
-            var enemies = new string[enemyCount];
-
+            var enemyPaths = new string[enemyCount];
+            var enemyNames = new string[enemyCount];
             for (var i = 0; i < enemyCount; i++) {
-                enemies[i] = Generative.EnemyGenerator.RandomEnemy();
+                enemyPaths[i] = Generative.EnemyGenerator.RandomEnemy();
+                enemyNames[i] = Generative.NamesGenerator.Instance.GetResult();
             }
 
+
+            var questData = new Quest.QuestData {
+                QuestName = questName,
+                EnemyPaths = enemyPaths,
+                BossPath = Generative.EnemyGenerator.RandomEnemy(true),
+                EnemyNames = enemyNames,
+                BossName = $"Boss {Generative.NamesGenerator.Instance.GetResult()}"
+            };
             foreach (var channel in channels) {
-                var quest = new Quest(channel, questName, enemies, Generative.EnemyGenerator.RandomEnemy(true));
+                var quest = new Quest(questData, channel);
                 questTasks.Add(quest.Start());
             }
 

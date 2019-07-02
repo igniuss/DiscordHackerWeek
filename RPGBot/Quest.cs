@@ -15,6 +15,14 @@ namespace RPGBot {
 
     public class Quest {
 
+        public struct QuestData {
+            public string QuestName { get; set; }
+            public string[] EnemyPaths { get; set; }
+            public string[] EnemyNames { get; set; }
+            public string BossPath { get; set; }
+            public string BossName { get; set; }
+        }
+
         #region Private Structs
 
         private struct EncounterData {
@@ -48,8 +56,6 @@ namespace RPGBot {
 
         public string BackgroundUrl { get; private set; }
 
-        public string Boss { get; }
-
         public DiscordChannel Channel { get; private set; }
 
         public TimeSpan CompletedTime {
@@ -57,10 +63,16 @@ namespace RPGBot {
                 return Timer.Elapsed;
             }
         }
+
         public float CurrentHP { get; set; }
         public int EncounterCount { get; private set; }
         public int EncounterIndex { get; private set; }
-        public string[] Enemies { get; }
+
+        public string[] EnemyPaths { get; }
+        public string[] EnemyNames { get; set; }
+        public string BossPath { get; }
+        public string BossName { get; set; }
+
         public float MaxHP { get; private set; }
         public string QuestName { get; private set; }
         public bool Success { get; private set; }
@@ -76,12 +88,15 @@ namespace RPGBot {
 
         #region Public Constructors
 
-        public Quest(DiscordChannel channel, string questName, string[] enemies, string boss) {
-            QuestName = questName;
-            EncounterCount = enemies.Length;
+        public Quest(QuestData data, DiscordChannel channel) {
             Channel = channel;
-            Enemies = enemies;
-            Boss = boss;
+
+            QuestName = data.QuestName;
+            EncounterCount = data.EnemyPaths.Length;
+            EnemyPaths = data.EnemyPaths;
+            EnemyNames = data.EnemyNames;
+            BossPath = data.BossPath;
+            BossName = data.BossName;
         }
 
         #endregion Public Constructors
@@ -148,8 +163,8 @@ namespace RPGBot {
                     await Task.Delay(500);
 
                     Console.WriteLine($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
-                    var enemy = Enemies[EncounterIndex];
-
+                    var enemy = EnemyPaths[EncounterIndex];
+                    var enemyName = EnemyNames[EncounterIndex];
                     //Fetch updated player stats
                     var players = Player.GetPlayers(Channel.GuildId, UserIds);
                     UpdateHP(players);
@@ -157,7 +172,6 @@ namespace RPGBot {
                     var enemyLevel = players.Sum(x => x.GetCurrentLevel());
                     enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.8f, 5f));
 
-                    var enemyName = Generative.NamesGenerator.Instance.GetResult();
                     var survivors = await Encounter(enemy, enemyLevel, enemyName);
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
@@ -182,7 +196,7 @@ namespace RPGBot {
                     await msg.DeleteAsync();
                     Console.WriteLine("Boss Fight");
                     await Task.Delay(500);
-                    var enemy = Boss;
+                    var enemy = BossPath;
 
                     //Fetch updated player stats
                     var players = Player.GetPlayers(Channel.GuildId, UserIds);
@@ -191,8 +205,9 @@ namespace RPGBot {
                     var enemyLevel = players.Sum(x => x.GetCurrentLevel());
                     enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 20f));
 
-                    var enemyName = Generative.NamesGenerator.Instance.GetResult();
-                    var survivors = await Encounter(enemy, enemyLevel, $"Boss {enemyName}");
+                    //var enemyName = Generative.NamesGenerator.Instance.GetResult();
+                    var enemyName = BossName;
+                    var survivors = await Encounter(enemy, enemyLevel, enemyName);
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
                         await Channel.SendMessageAsync(embed: embed);
@@ -441,6 +456,7 @@ namespace RPGBot {
             }
             return embed;
         }
+
         private void UpdateHP(IEnumerable<Player> players) {
             var diff = MaxHP - CurrentHP;
             MaxHP = players.Sum(x => x.GetTotalHP());
