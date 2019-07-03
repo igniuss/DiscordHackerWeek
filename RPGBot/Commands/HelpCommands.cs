@@ -35,11 +35,11 @@ namespace RPGBot.Commands {
                     }
                     if (contents.Contains("{")) {
                         var actions = Actions.ActionBase.GetAllActions();
-                        var characters = Characters.CharacterBase.GetAllCharacters();
-
                         foreach (var action in actions) {
                             contents = contents.Replace($"{{{action.GetType().Name}}}", action.GetEmoji());
                         }
+
+                        var characters = Characters.CharacterBase.Characters;
                         foreach (var character in characters) {
                             contents = contents.Replace($"{{{character.GetType().Name}}}", character.GetEmoji());
                         }

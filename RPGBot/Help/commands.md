@@ -11,6 +11,9 @@ Buy - Buy an item from the shop.
 
 Ping - Ping the bot.
 
+Vote - Receive gold for voting on [RPG-Bot](https://discordbots.org/bot/591408341608038400/vote)
+
+
 **Admin commands**
 
 Prefix - Change the bot prefix for this guild.

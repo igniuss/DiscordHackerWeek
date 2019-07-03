@@ -6,20 +6,25 @@ namespace RPGBot.Characters {
     public class Knight : CharacterBase {
 
         public override float AttackPowerMultiplier {
-            get { return 1; }
+            get { return 1f; }
         }
 
-        public override float HealthMultiplier {
+        public override float DefenseMultiplier {
             get { return 1.5f; }
         }
 
+        public override float HealthMultiplier {
+            get { return 1f; }
+        }
+
         public override float GoldMultiplier {
-            get { return 1; }
+            get { return 1f; }
         }
 
         public override DiscordEmoji GetEmoji() {
             return DiscordEmoji.FromName(Bot.Client, Emoji);
         }
+
         public string Emoji {
             get {
                 return ":shield:";

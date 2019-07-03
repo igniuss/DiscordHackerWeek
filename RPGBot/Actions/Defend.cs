@@ -9,6 +9,7 @@ namespace RPGBot.Actions {
                 return 1;
             }
         }
+
         public override DiscordEmoji GetEmoji() {
             return DiscordEmoji.FromName(Bot.Client, ":shield:");
         }

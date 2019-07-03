@@ -9,6 +9,7 @@ namespace RPGBot.Actions {
                 return 0;
             }
         }
+
         public override DiscordEmoji GetEmoji() {
             return DiscordEmoji.FromName(Bot.Client, ":crossed_swords:");
         }

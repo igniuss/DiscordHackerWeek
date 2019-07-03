@@ -10,7 +10,7 @@ namespace RPGBot.Generative {
         private readonly RantEngine Engine = new RantEngine();
         private RantProgram Program;
 
-        public RantGenerator() {
+        internal RantGenerator() {
             if (string.IsNullOrEmpty(RantPath) || !File.Exists(RantPath)) {
                 throw new FileNotFoundException(RantPath);
             }

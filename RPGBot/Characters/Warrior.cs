@@ -9,12 +9,16 @@ namespace RPGBot.Characters {
             get { return 1.5f; }
         }
 
+        public override float DefenseMultiplier {
+            get { return 1f; }
+        }
+
         public override float HealthMultiplier {
-            get { return 1; }
+            get { return 1f; }
         }
 
         public override float GoldMultiplier {
-            get { return 1; }
+            get { return 1f; }
         }
 
         public override DiscordEmoji GetEmoji() {
