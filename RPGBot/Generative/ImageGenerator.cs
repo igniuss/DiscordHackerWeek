@@ -96,7 +96,7 @@ namespace RPGBot.Generative {
 
             var transparency = 1f - HPPercentage;
             var rounded = (float)Math.Round(transparency * 4f) / 4f; //Round this to 1/4ths, we don't need more precision than this.
-            if(rounded == 0f) {
+            if (rounded == 0f) {
                 return path;
             }
             return SimulateDamage(path, HPPercentage);
@@ -124,10 +124,18 @@ namespace RPGBot.Generative {
             if (File.Exists(cacheName)) {
                 return File.ReadAllText(cacheName);
             }
-            var msg = await Bot.ImageCache.SendFileAsync(path);
-            var url = msg.Attachments.First().Url;
-            File.WriteAllText(cacheName, url);
-            return url;
+            try {
+                //Add an extra wait?
+                await Task.Delay(500);
+                var msg = await Bot.ImageCache.SendFileAsync(path);
+                var url = msg.Attachments.First().Url;
+                File.WriteAllText(cacheName, url);
+                return url;
+            } catch (Exception ex) {
+                Console.WriteLine(ex);
+                await Task.Delay(1500);
+                return await GetImageURL(path);
+            }
         }
     }
 }

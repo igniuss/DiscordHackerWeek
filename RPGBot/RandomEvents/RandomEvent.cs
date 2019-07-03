@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 namespace RPGBot.RandomEvents {
 
     public abstract class RandomEvent {
+
         public class EventData {
             public string Message { get; set; }
             public string Url { get; set; }
         }
+
         public abstract int Id { get; }
         public abstract string Description { get; }
 

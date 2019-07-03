@@ -9,6 +9,7 @@ namespace RPGBot.Actions {
                 return 2;
             }
         }
+
         public override DiscordEmoji GetEmoji() {
             return DiscordEmoji.FromName(Bot.Client, ":runner:");
         }

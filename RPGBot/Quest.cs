@@ -39,7 +39,7 @@ namespace RPGBot {
 
         #region Public Fields
 
-        public TimeSpan waitTime = TimeSpan.FromMinutes(0.1f);
+        public TimeSpan waitTime = TimeSpan.FromMinutes(1f);
 
         #endregion Public Fields
 
@@ -169,8 +169,8 @@ namespace RPGBot {
                     var players = Player.GetPlayers(Channel.GuildId, UserIds);
                     UpdateHP(players);
 
-                    var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.8f, 5f));
+                    var enemyLevel = Player.CalculateLevel((ulong)players.Sum(x => (long)x.GetCurrentExp()));
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.75f, 3f));
 
                     var survivors = await Encounter(enemy, enemyLevel, enemyName);
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
@@ -202,8 +202,8 @@ namespace RPGBot {
                     var players = Player.GetPlayers(Channel.GuildId, UserIds);
                     UpdateHP(players);
 
-                    var enemyLevel = players.Sum(x => x.GetCurrentLevel());
-                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(0.95f, 20f));
+                    var enemyLevel = Player.CalculateLevel((ulong)players.Sum(x => (long)x.GetCurrentExp()));
+                    enemyLevel = (int)Math.Round(enemyLevel * random.Range(1f, 5f));
 
                     //var enemyName = Generative.NamesGenerator.Instance.GetResult();
                     var enemyName = BossName;
@@ -221,6 +221,7 @@ namespace RPGBot {
                 Timer.Stop();
             } catch (System.Exception ex) {
                 Console.WriteLine(ex);
+                Success = false;
             }
             return this;
         }

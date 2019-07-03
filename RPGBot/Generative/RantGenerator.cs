@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 
 namespace RPGBot.Generative {
+
     public abstract class RantGenerator {
         public abstract string RantPath { get; }
         private readonly RantEngine Engine = new RantEngine();

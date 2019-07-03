@@ -1,10 +1,8 @@
 ﻿using DSharpPlus.Entities;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace RPGBot.Models {
+
     public class GuildOption {
         public const string DBName = "guildoptions.db";
         public const string TableName = "options";
@@ -14,9 +12,9 @@ namespace RPGBot.Models {
         public ulong Channel { get; set; }
         public ulong RoleId { get; set; }
         private DiscordChannel channel;
+
         public DiscordChannel GetChannel() {
             if (Bot.Client.Guilds.Any(x => x.Key == Id)) {
-
                 if (this.channel == null || this.channel.Id != Channel) {
                     if (Channel == 0) {
                         this.channel = Bot.Client.Guilds[Id].GetDefaultChannel();

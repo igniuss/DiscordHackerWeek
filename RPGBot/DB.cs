@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace RPGBot {
+
     public class DB {
+
         public static BsonValue Insert<T>(string dbName, string tableName, T data) {
             using (var db = new LiteDatabase(dbName)) {
                 var table = db.GetCollection<T>(tableName);
@@ -31,7 +33,7 @@ namespace RPGBot {
         }
 
         public static bool Update<T>(string dbName, string tableName, T data) {
-            using(var db = new LiteDatabase(dbName)) {
+            using (var db = new LiteDatabase(dbName)) {
                 var table = db.GetCollection<T>(tableName);
                 // returns false if item not found
                 var success = table.Update(data);
@@ -49,14 +51,14 @@ namespace RPGBot {
         }
 
         public static IEnumerable<T> GetAll<T>(string dbName, string tableName) {
-            using(var db = new LiteDatabase(dbName)) {
+            using (var db = new LiteDatabase(dbName)) {
                 var table = db.GetCollection<T>(tableName);
                 return table.FindAll();
             }
         }
 
         public static bool Upsert<T>(string dbName, string tableName, T data) {
-            using(var db = new LiteDatabase(dbName)) {
+            using (var db = new LiteDatabase(dbName)) {
                 var table = db.GetCollection<T>(tableName);
                 return table.Upsert(data);
             }

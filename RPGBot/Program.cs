@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using System;
 using System.IO;
 
@@ -12,6 +13,17 @@ namespace RPGBot {
                 Console.WriteLine("Couldn't find config.json. Please create it");
                 return;
             }
+
+            var config = new NLog.Config.LoggingConfiguration();
+            var logFile = new NLog.Targets.FileTarget("logfile") { FileName = "output.log" };
+            var logConsole = new NLog.Targets.ConsoleTarget("logconsole");
+            // Rules for mapping loggers to targets            
+            config.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
+            config.AddRule(LogLevel.Debug, LogLevel.Fatal, logFile);
+
+            // Apply config           
+            LogManager.Configuration = config;
+
 
             var json = File.ReadAllText("config.json");
             var options = JsonConvert.DeserializeObject<Options>(json);

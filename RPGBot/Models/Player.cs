@@ -32,13 +32,10 @@ namespace RPGBot.Models {
 
         public List<ItemBase> Items { get; set; }
 
-        //public CharacterBase character { get; set; }
         public int characterId { get; set; }
 
         public DateTime LastVoted { get; set; }
         public ulong VoteStreak { get; set; }
-
-        //public DiscordUser discordUser;
 
         public Player() {
         }
@@ -119,7 +116,7 @@ namespace RPGBot.Models {
         public void AddGold(ulong gold) {
             float mult = 1;
             var character = CharacterBase.GetCharacter(characterId);
-            if(character != null) { mult = character.GoldMultiplier; }
+            if (character != null) { mult = character.GoldMultiplier; }
             Gold += (ulong)Math.Ceiling(gold * mult);
         }
 

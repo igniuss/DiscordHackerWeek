@@ -16,18 +16,29 @@ namespace RPGBot {
     public class Bot {
 
         #region Public Fields
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static readonly ulong[] BotOwnerIds = new ulong[] { 109706676650663936, 330452192391593987 };
         public static List<GuildOption> GuildOptions;
         public static AuthDiscordBotListApi BotlistAPI { get; private set; }
 
+        public static Permissions[] RequiredPermissions = new Permissions[] {
+            Permissions.ReadMessageHistory,
+            Permissions.SendMessages,
+            Permissions.AddReactions,
+            Permissions.UseExternalEmojis,
+            Permissions.EmbedLinks,
+            Permissions.AccessChannels, //This fucking permission is the one
+        };
+
         #endregion Public Fields
 
         #region Public Properties
-
+        public static bool RunEvent = false;
         public static DiscordClient Client { get; private set; }
         public static CommandsNextExtension Commands { get; private set; }
         public static DiscordChannel ImageCache { get; private set; }
+        public static DiscordChannel ModerationChannel { get; private set; }
         public static InteractivityExtension Interactivty { get; private set; }
         public Options Options { get; private set; }
 
@@ -94,20 +105,22 @@ namespace RPGBot {
             await Client.ConnectAsync();
 
             if (!string.IsNullOrEmpty(options.DiscordbotToken)) {
-                BotlistAPI = new AuthDiscordBotListApi(Client.CurrentUser.Id, options.DiscordbotToken);
+                BotlistAPI = new AuthDiscordBotListApi(591408341608038400, options.DiscordbotToken);
             }
 
-            await Task.Delay(-1);
             while (true) {
                 var now = DateTime.Now;
                 var minutes = now.Minute;
-                var left = minutes % EventInterval;
+                var left = (60 - (minutes - 12)) % EventInterval;
                 await Task.Delay(TimeSpan.FromMinutes(left));
                 Console.WriteLine("STARTING EVENTS");
-                var channels = GuildOptions.Select(x => x.GetChannel());
-                var r = new Random();
-                await StartEvents(channels, r.Next(4, 20));
+                if (RunEvent) {
+                    var channels = GuildOptions.Select(x => x.GetChannel()).Where(x => x != null);
+                    var r = new Random();
+                    await StartEvents(channels, r.Next(4, 20));
+                }
             }
+            await Task.Delay(-1);
         }
 
         #endregion Public Methods
@@ -131,9 +144,11 @@ namespace RPGBot {
 
         public static string GetPrefix(DiscordGuild guild) {
             if (GuildOptions != null) {
-                var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
-                if (!string.IsNullOrEmpty(prefix)) {
-                    return prefix;
+                if (guild != null) {
+                    var prefix = GuildOptions.Where(x => x.Id == guild.Id).FirstOrDefault()?.Prefix;
+                    if (!string.IsNullOrEmpty(prefix)) {
+                        return prefix;
+                    }
                 }
             }
 #if DEBUG
@@ -152,7 +167,11 @@ namespace RPGBot {
                         if (role != null) {
                             try {
                                 if (role.IsMentionable) {
-                                    await channel.SendMessageAsync($"{role.Mention} New quest is starting!");
+                                    try {
+                                        await channel.SendMessageAsync($"{role.Mention} New quest is starting!");
+                                    } catch (System.Exception ex) {
+                                        Console.WriteLine(ex);
+                                    }
                                     Console.WriteLine($"Pinging {role} on {channel.Guild.Name}.");
                                     await Task.Delay(200);
                                 }
@@ -164,6 +183,8 @@ namespace RPGBot {
                 }
             }
         }
+
+
 
         public static async Task PostLeaderboards(Quest[] quests) {
             if (quests.Length == 0) { return; }
@@ -198,7 +219,6 @@ namespace RPGBot {
                 enemyNames[i] = Generative.NamesGenerator.Instance.GetResult();
             }
 
-
             var questData = new Quest.QuestData {
                 QuestName = questName,
                 EnemyPaths = enemyPaths,
@@ -207,10 +227,25 @@ namespace RPGBot {
                 BossName = $"Boss {Generative.NamesGenerator.Instance.GetResult()}"
             };
             foreach (var channel in channels) {
-                var quest = new Quest(questData, channel);
-                questTasks.Add(quest.Start());
-            }
+                //check permissions
+                var member = await channel.Guild.GetMemberAsync(Client.CurrentUser.Id);
 
+                var perm = channel.PermissionsFor(member);
+
+
+                var hasPermissions = true;
+                foreach (var p in RequiredPermissions) {
+                    if (!perm.HasPermission(p)) {
+                        hasPermissions = false;
+                        break;
+                    }
+                }
+                if (hasPermissions) {
+                    var quest = new Quest(questData, channel);
+                    questTasks.Add(quest.Start());
+                }
+            }
+            if (questTasks.Count == 0) { return; }
             var quests = await Task.WhenAll(questTasks);
 
             if (quests == null || quests.Length == 0) {
@@ -237,10 +272,6 @@ namespace RPGBot {
             return options;
         }
 
-        private void Log(LogLevel level, string msg) {
-            Client.DebugLogger.LogMessage(level, "RPG-Bot", msg, DateTime.Now);
-        }
-
         private async Task OnHeartbeat(HeartbeatEventArgs e) {
             //calculate time left till new mission
             var timeLeft = TimeSpan.FromMinutes(60 - DateTime.Now.Minute);
@@ -259,25 +290,32 @@ namespace RPGBot {
         #region Event Callbacks
 
         private async Task OnClientErrored(ClientErrorEventArgs e) {
-            Log(LogLevel.Error, e.Exception.ToString());
+            Logger.Error(e.Exception);
             await Task.Delay(1);
         }
 
         private async Task OnClientReady(ReadyEventArgs e) {
-            Log(LogLevel.Info, "Client Ready");
-
+            Logger.Info("Client ready");
             await Task.Delay(1);
         }
 
         private async Task OnGuildAvailable(GuildCreateEventArgs e) {
             if (e.Guild.Id == Options.Guild) {
-                Log(LogLevel.Info, $"Setting up ImageCache");
+                Logger.Info("Found options.Guild");
                 var channels = await e.Guild.GetChannelsAsync();
                 foreach (var channel in channels) {
-                    if (channel.Id == Options.CacheChannel) {
-                        ImageCache = channel;
+                    if (ImageCache != null && ModerationChannel != null) {
                         break;
                     }
+                    if (channel.Id == Options.ModerationChannel) {
+                        Logger.Info("Found moderation channel");
+                        ModerationChannel = channel;
+                    }
+                    if (channel.Id == Options.CacheChannel) {
+                        Logger.Info("Found cache channel");
+                        ImageCache = channel;
+                    }
+
                 }
             }
 
@@ -291,7 +329,7 @@ namespace RPGBot {
                 LoadGuildOptions();
             }
 
-            Log(LogLevel.Info, $"{e.Guild.Name} is now Available");
+            Logger.Info("OnGuildAvailable {0}", e.Guild.Name);
             await Task.Delay(1);
         }
 
@@ -301,7 +339,7 @@ namespace RPGBot {
         }
 
         private async Task OnGuildUnavailable(GuildDeleteEventArgs e) {
-            Log(LogLevel.Warning, $"{e.Guild.Name} is now Unavailable");
+            Logger.Warn($"{e.Guild.Name} became unavailable");
             await Task.Delay(1);
         }
 
@@ -313,11 +351,13 @@ namespace RPGBot {
                 var cmdText = e.Message.Content.Substring(prefix.Length);
                 var command = Commands.FindCommand(cmdText, out var rawArgs);
                 if (command != null) {
+
+                    Logger.Info($"[{e.Guild.Name}]{e.Author.Username} is trying to execute {command.Name}");
                     try {
                         var ctx = Commands.CreateContext(e.Message, prefix, command, rawArgs);
                         _ = Commands.ExecuteCommandAsync(ctx);
                     } catch (System.Exception ex) {
-                        Log(LogLevel.Error, ex.ToString());
+                        Logger.Error(ex);
                     }
                 }
             }

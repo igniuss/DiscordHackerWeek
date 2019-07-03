@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace RPGBot.Models {
 
-namespace RPGBot.Models {
     public class Guild {
         public ulong Id { get; set; }
         //public Player[] Players { get; set; }
@@ -13,7 +10,7 @@ namespace RPGBot.Models {
 
         public Guild GetGuild(ulong id) {
             var guild = DB.FindOne<Guild>("guilds.db", "guilds", x => x.Id == id);
-            if(guild == null) {
+            if (guild == null) {
                 guild = new Guild(id);
                 DB.Insert("guilds.db", "guilds", guild);
             }

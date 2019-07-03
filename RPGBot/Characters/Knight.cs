@@ -5,7 +5,6 @@ namespace RPGBot.Characters {
     // Knight has average attack and gold earned, but gets a health bonus from its armor
     public class Knight : CharacterBase {
 
-
         public override float AttackPowerMultiplier {
             get { return 1f; }
         }
@@ -21,9 +20,11 @@ namespace RPGBot.Characters {
         public override float GoldMultiplier {
             get { return 1f; }
         }
+
         public override DiscordEmoji GetEmoji() {
             return DiscordEmoji.FromName(Bot.Client, Emoji);
         }
+
         public string Emoji {
             get {
                 return ":shield:";

@@ -16,6 +16,5 @@ namespace RPGBot.Actions {
                 .Select(t => (Actions.ActionBase)Activator.CreateInstance(t));
             return actions;
         }
-
     }
 }
