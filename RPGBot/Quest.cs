@@ -52,6 +52,7 @@ namespace RPGBot {
 
         #region Public Properties
 
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public string BackgroundPath { get; private set; }
 
         public string BackgroundUrl { get; private set; }
@@ -75,7 +76,7 @@ namespace RPGBot {
 
         public float MaxHP { get; private set; }
         public string QuestName { get; private set; }
-        public bool Success { get; private set; }
+        public bool Success { get; private set; } = false;
         public ulong[] UserIds { get; private set; }
 
         #endregion Public Properties
@@ -140,11 +141,11 @@ namespace RPGBot {
 
                 //TODO: no-one joined.
                 if (userIds.Count == 0) {
+                    await msg.DeleteAsync();
                     Timer.Stop();
-                    Success = false;
                     return null;
                 }
-
+                Logger.Info($"{userIds.Count} joined quest in {Channel.Guild.Name}");
                 UserIds = userIds.ToArray();
                 await msg.DeleteAsync();
                 await Task.Delay(500);
@@ -162,7 +163,7 @@ namespace RPGBot {
                     await msg.DeleteAsync();
                     await Task.Delay(500);
 
-                    Console.WriteLine($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
+                    Logger.Debug($"Encounter: {EncounterIndex} - {EncounterCount} on {Channel.Guild.Name}");
                     var enemy = EnemyPaths[EncounterIndex];
                     var enemyName = EnemyNames[EncounterIndex];
                     //Fetch updated player stats
@@ -176,7 +177,6 @@ namespace RPGBot {
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
                         await Channel.SendMessageAsync(embed: embed);
-                        Success = false;
                         Timer.Stop();
                         return this;
                     }
@@ -194,7 +194,7 @@ namespace RPGBot {
                 //BOSS FIGHT
                 {
                     await msg.DeleteAsync();
-                    Console.WriteLine("Boss Fight");
+                    Logger.Debug("Boss Fight");
                     await Task.Delay(500);
                     var enemy = BossPath;
 
@@ -211,7 +211,6 @@ namespace RPGBot {
                     if (survivors.Ids == null || survivors.Ids.Count() == 0) {
                         embed.WithDescription(survivors.Message);
                         await Channel.SendMessageAsync(embed: embed);
-                        Success = false;
                         Timer.Stop();
                         return this;
                     }
@@ -220,8 +219,7 @@ namespace RPGBot {
                 Success = true;
                 Timer.Stop();
             } catch (System.Exception ex) {
-                Console.WriteLine(ex);
-                Success = false;
+                Logger.Error(ex);
             }
             return this;
         }
@@ -235,11 +233,11 @@ namespace RPGBot {
         }
 
         private long CalculateExp(int enemyLevel, float currentHP, float maxHP) {
-            return (long)Math.Ceiling(enemyLevel * 10f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
+            return (long)Math.Ceiling(enemyLevel * 20f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
         }
 
         private ulong CalculateGold(int enemyLevel, float currentHP, float maxHP) {
-            return (ulong)Math.Ceiling(enemyLevel * 25f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
+            return (ulong)Math.Ceiling(enemyLevel * 50f * (CurrentHP == 0 ? 1f : 1f - (currentHP / maxHP)));
         }
 
         private async Task<EncounterData> Encounter(string enemyPath, int enemyLevel, string enemyName) {
@@ -287,18 +285,23 @@ namespace RPGBot {
 
                     async Task CollectActions(CancellationToken token) {
                         while (currentPlayerActions.Values.Any(x => x == -1)) {
-                            await Task.Delay(1000);
-                            foreach (var action in actions) {
+                            try {
                                 if (token.IsCancellationRequested) { return; }
-                                var reactions = await msg.GetReactionsAsync(action.GetEmoji());
-                                await Task.Delay(500);
-                                foreach (var user in reactions) {
-                                    if (user.IsBot) { continue; }
-                                    if (currentUserIds.Contains(user.Id)) {
-                                        Console.WriteLine($"Found {user.Id} with action {action.GetType().Name}");
-                                        currentPlayerActions[user.Id] = action.Id;
+                                await Task.Delay(1000);
+                                foreach (var action in actions) {
+                                    if (token.IsCancellationRequested) { return; }
+                                    var reactions = await msg.GetReactionsAsync(action.GetEmoji());
+                                    await Task.Delay(500);
+                                    foreach (var user in reactions) {
+                                        if (user.IsBot) { continue; }
+                                        if (currentUserIds.Contains(user.Id)) {
+                                            Logger.Info($"Found {user.Id} with action {action.GetType().Name}");
+                                            currentPlayerActions[user.Id] = action.Id;
+                                        }
                                     }
                                 }
+                            } catch (System.Exception ex) {
+                                Logger.Error(ex);
                             }
                         }
                     }
@@ -319,7 +322,7 @@ namespace RPGBot {
                             timeout.Cancel();
                             await task;
                         } else {
-                            Console.WriteLine("TIMEOUT");
+                            Logger.Info("TIMEOUT");
                         }
                     }
 
@@ -411,7 +414,7 @@ namespace RPGBot {
                     #endregion Handle Actions
                 }
             } catch (System.Exception ex) {
-                Console.WriteLine(ex);
+                Logger.Error(ex);
                 return new EncounterData();
             }
         }
