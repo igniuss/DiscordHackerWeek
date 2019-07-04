@@ -14,6 +14,8 @@ namespace RPGBot {
                 return;
             }
 
+            NLog.Config.ConfigurationItemFactory.Default.Targets.RegisterDefinition("DiscordChannel", typeof(DiscordChannelTarget));
+
             var config = new NLog.Config.LoggingConfiguration();
             var logFile = new NLog.Targets.FileTarget("logfile") { FileName = "output.log" };
             var logConsole = new NLog.Targets.ConsoleTarget("logconsole");
@@ -23,7 +25,6 @@ namespace RPGBot {
 
             // Apply config           
             LogManager.Configuration = config;
-
 
             var json = File.ReadAllText("config.json");
             var options = JsonConvert.DeserializeObject<Options>(json);

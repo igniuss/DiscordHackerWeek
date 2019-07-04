@@ -1,4 +1,6 @@
-﻿using RPGBot.Characters;
+﻿using LiteDB;
+using Newtonsoft.Json;
+using RPGBot.Characters;
 using RPGBot.Helpers;
 using RPGBot.Items;
 using System;
@@ -20,7 +22,7 @@ namespace RPGBot.Models {
         public int DeathCounter { get; set; }
         public int LifetimeMercenariesHired { get; set; }
 
-        [LiteDB.BsonIgnore]
+        [BsonIgnore, JsonIgnore]
         public int CurrentMercenaries {
             get {
                 return Items.FirstOrDefault(x => x.GetType() == typeof(Mercenary)).Count;
@@ -89,7 +91,7 @@ namespace RPGBot.Models {
             if (character == null) { return 0f; }
             var lvl = GetCurrentLevel();
             var _base = 120;
-            var mercenaryBonus = _base * CurrentMercenaries;
+            var mercenaryBonus = _base * CurrentMercenaries * 4f;
             return (lvl * _base * character.HealthMultiplier) + mercenaryBonus;
         }
 
@@ -99,7 +101,7 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = this.random.Range(1f, 6f) * 0.75f;
-            var mercenaryBonus = _base * CurrentMercenaries;
+            var mercenaryBonus = _base * CurrentMercenaries * 4f;
             return (lvl * _base * character.AttackPowerMultiplier * crit) + mercenaryBonus;
         }
 
@@ -109,7 +111,7 @@ namespace RPGBot.Models {
             var lvl = GetCurrentLevel();
             var _base = 5;
             var crit = this.random.Range(1f, 6f) * 0.75f;
-            var mercenaryBonus = _base * CurrentMercenaries;
+            var mercenaryBonus = _base * CurrentMercenaries * 4f;
             return (lvl * _base * character.DefenseMultiplier * crit) + mercenaryBonus;
         }
 

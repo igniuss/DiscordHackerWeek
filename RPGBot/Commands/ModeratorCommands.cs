@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using LiteDB;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Newtonsoft.Json;
 using RPGBot.Models;
 using System;
 using System.Collections.Generic;
@@ -41,6 +42,12 @@ namespace RPGBot.Commands {
             }
 
             public DiscordClient Client;
+        }
+        [Command("throw")]
+        public async Task TestExceptions(CommandContext ctx) {
+            if (!Bot.BotOwnerIds.Contains(ctx.User.Id)) { return; }
+            Logger.Error("Test Error Message");
+            Logger.Fatal("Fatal Message");
         }
 
         [Command("eval"), Aliases("evalcs", "cseval", "roslyn"), Description("Evaluates C# code.")]
@@ -126,7 +133,7 @@ namespace RPGBot.Commands {
                         Bot.UpdateGuildOptions();
                         await ctx.RespondAsync($"👌 New default channel is now {guild.GetChannel()}");
                     } catch (System.Exception ex) {
-                        System.Console.WriteLine(ex);
+                        Logger.Error(ex);
                     }
                 } else {
                     await ctx.RespondAsync("Seems like I can't post messages, or add reactions in that channel!");
@@ -212,17 +219,28 @@ namespace RPGBot.Commands {
         public async Task DumpDB(CommandContext ctx) {
             if (Bot.BotOwnerIds.Contains(ctx.User.Id)) {
                 foreach (var guild in ctx.Client.Guilds) {
+                    Logger.Info($"Dumping {guild.Value.Name}");
                     var path = $"{guild.Key}.db";
                     if (!File.Exists(path)) { continue; }
-                    using (var db = new LiteDatabase(path)) {
-                        var collection = db.GetCollection<Player>("players");
-                        var players = collection.FindAll();
-                        var json = Newtonsoft.Json.JsonConvert.SerializeObject(players);
-                        var jsonFile = $"{guild.Value.Name}_{guild.Key}.json";
-                        File.WriteAllText(jsonFile, json);
-                        await ctx.RespondWithFileAsync(jsonFile);
-                        File.Delete(jsonFile);
-                        await Task.Delay(300);
+                    try {
+                        using (var db = new LiteDatabase(path)) {
+                            var collection = db.GetCollection<Player>("players");
+                            var players = collection.FindAll();
+                            var json = JsonConvert.SerializeObject(players,
+                                Formatting.None,
+                                new JsonSerializerSettings {
+                                    NullValueHandling = NullValueHandling.Ignore,
+                                    DefaultValueHandling = DefaultValueHandling.Ignore,
+                                });
+
+                            var jsonFile = $"{guild.Value.Name}_{guild.Key}.json";
+                            File.WriteAllText(jsonFile, json);
+                            await ctx.RespondWithFileAsync(jsonFile);
+                            File.Delete(jsonFile);
+                            await Task.Delay(300);
+                        }
+                    } catch (System.Exception ex) {
+                        Logger.Error(ex);
                     }
                 }
             }
